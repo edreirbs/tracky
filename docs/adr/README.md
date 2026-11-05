@@ -12,3 +12,4 @@
 | [0008](0008-coin-ledger.md) | Libro mayor de monedas en SQL | Aceptado |
 | [0009](0009-assistant-tools-and-search.md) | Asistente con herramientas de solo lectura + búsqueda full-text | Aceptado |
 | [0010](0010-no-service-role.md) | Sin service_role: el segundo plano usa el token de la persona | Aceptado |
+| [0011](0011-supabase-heartbeat.md) | Latido diario para que Supabase no pause el proyecto | Aceptado |

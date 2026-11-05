@@ -123,6 +123,8 @@ Confirma con `manage-env-vars` + `getAllEnvVars` que `ANTHROPIC_API_KEY` existe 
    directorio con el conector (`deploy-site` con el `siteId`).
 3. Si el despliegue dice "credit usage exceeded", **no reintentes**: avísale.
 4. Verifica: `curl -s https://<nombre>.netlify.app/health?check=claude` → `"claude":"ok"`.
+   El despliegue incluye el **latido diario** a Supabase (FR-410): no hay que hacer nada; menciónalo en una
+   línea ("tu base de datos no se dormirá aunque no uses Tracky unos días").
    * `missing`: la variable no está o se creó después del despliegue → revisa el Paso 6 y vuelve a desplegar una vez.
    * `invalid`: la llave está mal copiada o revocada.
 
@@ -174,4 +176,4 @@ Confirma con `manage-env-vars` + `getAllEnvVars` que `ANTHROPIC_API_KEY` existe 
 | No llega el correo | Límite del correo gratuito de Supabase | Esperar unos minutos; revisar spam |
 | `/health` sin Claude | Variable creada después del despliegue | Un redespliegue |
 | "Puente apagado" | El agente no arrancó | `scripts/setup-mac.sh status` y `/tracky-doctor` |
-| Proyecto de Supabase en pausa | 7 días sin uso (plan gratuito) | Reanudarlo con el conector (`restore_project`) |
+| Proyecto de Supabase en pausa | El latido no corrió (sitio borrado o sin desplegar) | Reanudarlo (`restore_project`) y revisar el despliegue |

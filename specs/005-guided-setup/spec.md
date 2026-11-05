@@ -41,12 +41,13 @@ Implementado en `.claude/skills/tracky-setup/SKILL.md`.
 | FR-406 | El puente queda como agente de `launchd` que inicia con la sesión; `/tracky-doctor` diagnostica y repara. |
 | FR-407 | `/tracky-update` trae cambios de la plantilla y aplica migraciones pendientes. |
 | FR-409 | Las **etiquetas son un paso obligatorio** de la configuración: Claude entrevista al usuario (temas, proyectos, áreas), propone de 3 a 12 etiquetas con su descripción para clasificar, las confirma con el usuario y las guarda; incluye siempre "Otros". |
+| FR-410 | La instalación incluye un **latido diario** a Supabase (función programada de Netlify) para que el plan gratuito no pause el proyecto por inactividad; no requiere pasos de la persona (ADR-0011). |
 | FR-408 | Un solo despliegue a producción por configuración (ahorro de créditos de Netlify). |
 | NFR-401 | Configuración completa en < 20 min en una Mac con buena conexión (sin contar descarga del modelo). |
 | NFR-402 | Prueba de aceptación: una persona sin experiencia técnica la completa sin ayuda externa. |
 
 ## 5. Riesgos
 * Los nombres de herramientas de los conectores pueden cambiar → la skill describe **intenciones** y valida al inicio.
-* Plan gratuito de Supabase se pausa tras 7 días sin uso → `/tracky-doctor` lo detecta y lo reanuda.
+* Plan gratuito de Supabase se pausa tras 7 días sin uso → latido diario (FR-410); si aun así se pausa, `/tracky-doctor` lo reanuda.
 * El conector de Supabase no expone la configuración de Auth ni la `service_role` → paso 5 manual y ADR-0010 (sin service_role).
 * El conector de Netlify no enlaza el repo de GitHub → los despliegues se hacen con el conector desde un clon limpio; enlazarlo en la UI de Netlify es opcional (despliegue automático por push).
