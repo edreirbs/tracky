@@ -1,0 +1,1240 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Foco Diario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: pizarra de juntas (máx. 1180px). Arriba captura; en "Ahora" un tablero de 2 zonas:
+   Ahora (3 post-its grandes) | Siguientes + Esperando (post-its chicos). Hojas de papel para listas y formularios.
+   Mundo visual: pizarra de grafito mate, post-its en tonos sobrios; el color de cada post-it = la persona. */
+:root{
+  color-scheme:dark;
+  --board:#2C3230; --board-2:#353C39; --frame:#1F2423;
+  --chalk:#ECEEE9; --chalk-dim:#A3AAA5; --chalk-line:#46504C;
+  --paper:#F7F6F1; --paper-ink:#20252A; --paper-muted:#69706C; --paper-line:#E1DFD6; --paper-2:#EEECE4;
+  --accent:#2F5BD3; --accent-ink:#FFFFFF; --accent-deep:#2147A8; --accent-soft:#E2E9FB;
+  --hi:#F2D45C; --hi-ink:#20252A;
+  --good:#2E8A5E; --good-ink:#FFFFFF; --good-soft:#DCEFE3; --warn:#C2482F; --warn-soft:#F7E0D9;
+  --n0:#F3E3A1; --n1:#F1D0C8; --n2:#CFE2D0; --n3:#C9DBEA; --n4:#DDD4EB; --n5:#F2D9B3; --n-none:#E9E8E1;
+  --p0:#C9A82A; --p1:#C9705E; --p2:#4F9A68; --p3:#4C80B5; --p4:#8A70B8; --p5:#C98A3A;
+  --line:#B9BDB8;
+  --fg:var(--chalk); --mut:var(--chalk-dim); --ln:var(--chalk-line); --sf2:var(--board-2); --inv:var(--board);
+  --f-ui:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-marker:"Caveat","Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+  --pin-shadow:0 1px 1px rgba(0,0,0,.25), 0 12px 20px -12px rgba(0,0,0,.65);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+img{max-width:100%}
+html,body{background:var(--board);color:var(--chalk)}
+body{font-family:var(--f-ui);font-size:15.5px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  background-image:radial-gradient(1200px 500px at 20% -10%,rgba(255,255,255,.05),transparent 70%),radial-gradient(900px 600px at 110% 120%,rgba(0,0,0,.25),transparent 70%)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 90px}
+
+/* Superficies de papel: redefinen los tokens de texto */
+.list,.box,.step,.proc,.pcard,.banner,.lock-card,.capture,.toast,.wait-box{--fg:var(--paper-ink);--mut:var(--paper-muted);--ln:var(--paper-line);--sf2:var(--paper-2);--inv:var(--paper);color:var(--paper-ink)}
+.slot,.mini{--fg:var(--paper-ink);--mut:rgba(32,37,42,.62);--ln:rgba(32,37,42,.16);--sf2:rgba(255,255,255,.55);--inv:var(--paper);color:var(--paper-ink)}
+
+/* Encabezado */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-marker);font-weight:700;font-size:2.1rem;line-height:1;margin:0;color:var(--chalk);letter-spacing:.01em}
+.brand h1 span{background:var(--n0);color:var(--paper-ink);padding:0 10px 2px;display:inline-block;transform:rotate(-2deg);box-shadow:var(--pin-shadow);margin-right:4px}
+.today{color:var(--chalk-dim);font-size:.92rem;font-weight:600;text-transform:capitalize}
+.top-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.streak{font-weight:700;font-size:.85rem;color:var(--chalk);border:1px solid var(--chalk-line);padding:5px 12px;border-radius:999px;white-space:nowrap}
+
+/* Captura: tira de papel */
+.capture{margin-top:18px;background:var(--paper);border-radius:6px;padding:6px 6px 6px 18px;display:flex;gap:8px;align-items:center;box-shadow:var(--pin-shadow)}
+.capture input{flex:1;min-width:0;border:0;background:transparent;font-size:1.08rem;padding:11px 0;outline:none;font-weight:600;color:var(--paper-ink)}
+.capture input::placeholder{color:var(--paper-muted);font-weight:500}
+.capture-hint{display:flex;gap:12px;flex-wrap:wrap;align-items:center;min-height:26px;margin-top:9px;font-size:.85rem;color:var(--chalk-dim)}
+.capture-hint kbd{font-family:var(--f-ui);font-size:.75rem;border:1px solid var(--chalk-line);border-radius:5px;padding:0 6px;color:var(--chalk)}
+.sens{color:#FFD3C7;background:rgba(194,72,47,.35);padding:2px 10px;border-radius:999px;font-weight:700}
+
+/* Pestañas: etiquetas de marcador */
+.tabs-scroll{overflow-x:auto;margin-top:14px;scrollbar-width:none;border-bottom:1px solid var(--chalk-line)}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tabs{display:flex;gap:4px;min-width:max-content}
+.tab{border:0;background:transparent;padding:10px 14px 12px;font-weight:700;font-size:.92rem;color:var(--chalk-dim);cursor:pointer;display:flex;gap:8px;align-items:center;position:relative}
+.tab:hover{color:var(--chalk)}
+.tab[aria-selected="true"]{color:var(--chalk)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:3px;border-radius:3px;background:var(--hi)}
+.badge{font-size:.72rem;font-weight:800;min-width:20px;height:20px;padding:0 6px;border-radius:999px;display:inline-grid;place-items:center;background:var(--chalk);color:var(--board)}
+.badge.alert{background:var(--warn);color:#fff}
+
+/* Botones */
+.btn{border:1px solid var(--ln);background:transparent;color:var(--fg);border-radius:8px;padding:8px 14px;font-weight:700;font-size:.92rem;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1.2;transition:background .12s ease,border-color .12s ease}
+.btn:hover{background:var(--sf2);border-color:var(--mut)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+.btn.hi{background:var(--hi);border-color:var(--hi);color:var(--hi-ink)}
+.btn.good{background:var(--good);border-color:var(--good);color:var(--good-ink)}
+.btn.good:hover{background:#25744F}
+.btn.ghost{border-color:transparent}
+.btn.small{padding:6px 11px;font-size:.85rem}
+.btn.tiny{padding:4px 9px;font-size:.8rem;border-radius:6px}
+.btn.big{padding:13px 20px;font-size:1rem}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.danger{color:var(--warn)}
+.top .btn{color:var(--chalk);border-color:var(--chalk-line)}
+
+/* Chips y etiquetas */
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{border:1px solid var(--ln);background:transparent;border-radius:999px;padding:5px 13px;cursor:pointer;font-weight:700;font-size:.88rem;display:inline-flex;gap:7px;align-items:center;color:var(--fg)}
+.chip:hover{border-color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--inv);border-color:var(--fg)}
+.slot .chip{background:rgba(255,255,255,.5)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--sf2);color:var(--mut);white-space:nowrap}
+.tag.due-today{background:var(--hi);color:var(--hi-ink)}
+.tag.due-late{background:var(--warn);color:#fff}
+.tag.block{background:var(--accent-soft);color:var(--accent)}
+.tag.person{background:transparent;color:var(--fg);padding-left:0}
+.slot .tag.person .dot,.mini .tag.person .dot{display:none}
+.slot .tag.person,.mini .tag.person{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+
+/* Títulos */
+main{margin-top:24px;display:flex;flex-direction:column;gap:22px}
+.h2{font-family:var(--f-marker);font-weight:700;font-size:clamp(2.2rem,4.6vw,2.8rem);margin:0;line-height:1;color:var(--chalk)}
+.mark{background:none;color:inherit;padding:0}
+.sub{color:var(--chalk-dim);margin:6px 0 0;max-width:62ch}
+.h3{font-weight:800;font-size:1.05rem;margin:0;color:var(--fg)}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.section-head .h3{color:var(--chalk)}
+.marker{font-family:var(--f-marker);font-weight:700;font-size:2.2rem;line-height:1;margin:0;color:var(--chalk)}
+.marker.sm{font-size:1.65rem}
+
+/* Avisos: tiras de papel */
+.banner{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:11px 14px 11px 16px;border-radius:6px;background:var(--paper);box-shadow:var(--pin-shadow);border-left:5px solid var(--paper-muted)}
+.banner p{margin:0;flex:1;min-width:200px;font-size:.93rem}
+.banner.follow{border-left-color:var(--warn)}
+.banner.ex{border-left-color:var(--accent)}
+.banner strong{font-weight:800}
+.banners{display:flex;flex-direction:column;gap:10px}
+
+/* Tablero */
+.board{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:980px){.board{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.col-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--chalk-line);padding-bottom:6px}
+.col-c{font-weight:700;font-size:.85rem;color:var(--chalk-dim);font-variant-numeric:tabular-nums}
+.col-side{gap:26px}
+.col-side > section{display:flex;flex-direction:column;gap:12px}
+
+/* Post-its grandes */
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding-top:4px}
+@media (max-width:760px){.slots{grid-template-columns:1fr}}
+.slot{--note:var(--n-none);background:var(--note);border-radius:2px;padding:22px 16px 16px;display:flex;flex-direction:column;gap:11px;min-width:0;position:relative;box-shadow:var(--pin-shadow);min-height:250px;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.18),transparent 30%,transparent 82%,rgba(0,0,0,.05))}
+.slots > :nth-child(1){transform:rotate(-.7deg)}
+.slots > :nth-child(2){transform:rotate(.5deg)}
+.slots > :nth-child(3){transform:rotate(-.3deg)}
+.slot::before,.mini::before{content:"";position:absolute;top:7px;left:50%;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8E9590,#4C5350);box-shadow:0 2px 3px rgba(0,0,0,.35)}
+.slot .num{font-weight:800;font-size:.72rem;letter-spacing:.1em;color:var(--mut)}
+.slot .act{font-weight:800;font-size:1.18rem;line-height:1.25;letter-spacing:-.01em;overflow-wrap:anywhere}
+.slot .orig{color:var(--mut);font-size:.84rem;margin-top:-5px;overflow-wrap:anywhere}
+.slot .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.slot .tag.block{background:rgba(255,255,255,.7)}
+.slot .muted{color:var(--mut)}
+.slot.empty{background:transparent;background-image:none;border:1.5px dashed var(--chalk-line);box-shadow:none;transform:none!important;color:var(--chalk-dim);--fg:var(--chalk);--ln:var(--chalk-line);--sf2:var(--board-2);justify-content:center;align-items:flex-start}
+.slot.empty::before{display:none}
+.slot.empty .num{color:var(--chalk-dim)}
+.slot.running{transform:none!important;outline:3px solid var(--hi);outline-offset:4px}
+.slot-foot{margin-top:auto;display:flex;flex-direction:column;gap:9px}
+.est-label{font-size:.78rem;font-weight:700;color:var(--mut)}
+.row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+/* Temporizador */
+.timer{display:flex;flex-direction:column;gap:7px}
+.bar{height:10px;border-radius:999px;background:rgba(32,37,42,.12);overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--paper-ink);transition:width 1s linear}
+.bar.over i{background:var(--warn)}
+.timer-txt{font-variant-numeric:tabular-nums;font-size:.85rem;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:600}
+.timer-txt b{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+
+/* Post-its chicos */
+.minis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:980px){.minis{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
+.mini{--note:var(--n-none);background:var(--note);border-radius:2px;padding:18px 12px 11px;display:flex;flex-direction:column;gap:7px;position:relative;box-shadow:var(--pin-shadow);min-width:0}
+.minis > :nth-child(odd){transform:rotate(-.6deg)}
+.minis > :nth-child(even){transform:rotate(.5deg)}
+.mini::before{top:6px;width:8px;height:8px;margin-left:-4px}
+.mini-t{font-weight:800;font-size:.9rem;line-height:1.3;overflow-wrap:anywhere}
+.mini-s{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.mini-s .tag{font-size:.7rem;padding:1px 7px}
+.mini-a{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.col-empty{color:var(--chalk-dim);font-size:.88rem;margin:0;padding:12px;border:1.5px dashed var(--chalk-line);border-radius:4px}
+
+/* Hecho hoy */
+.done-strip{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--chalk-line);padding-top:16px}
+.wins{display:flex;gap:8px;flex-wrap:wrap}
+.win{background:var(--n2);color:var(--paper-ink);border-radius:2px;padding:4px 11px;font-weight:700;font-size:.82rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 1px 1px rgba(0,0,0,.25);text-decoration:line-through;text-decoration-color:rgba(32,37,42,.45)}
+.win-count{font-family:var(--f-marker);font-weight:700;font-size:2.3rem;line-height:1;color:var(--hi)}
+
+/* Listas: hojas de papel */
+.list{display:flex;flex-direction:column;background:var(--paper);border-radius:4px;overflow:hidden;box-shadow:var(--pin-shadow)}
+.li{display:flex;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--paper-line);flex-wrap:wrap}
+.li:first-child{border-top:0}
+.li .txt{flex:1;min-width:180px;overflow-wrap:anywhere}
+.li .txt .t{font-weight:700}
+.li .txt .s{font-size:.82rem;color:var(--mut);display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:3px}
+.li.done .t{text-decoration:line-through;color:var(--mut)}
+.empty-msg{padding:20px;color:var(--mut)}
+
+/* Procesar */
+.proc{background:var(--paper);border-radius:4px;padding:24px;display:flex;flex-direction:column;gap:20px;box-shadow:var(--pin-shadow)}
+.proc-text{font-weight:800;font-size:1.3rem;line-height:1.3;overflow-wrap:anywhere;background:var(--n0);padding:16px 18px;border-radius:2px;box-shadow:0 1px 1px rgba(0,0,0,.2), 0 8px 14px -10px rgba(0,0,0,.5);transform:rotate(-.6deg);display:inline-block;margin-top:6px;max-width:100%}
+.q{display:flex;flex-direction:column;gap:8px}
+.q label,.q .ql{font-weight:800}
+.q .help{font-size:.82rem;color:var(--mut)}
+.field{border:1px solid var(--ln);background:#FFFFFF;color:var(--paper-ink);border-radius:8px;padding:10px 12px;width:100%;font-size:.98rem}
+.field:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+select.field{color-scheme:light}
+.progress{font-weight:700;font-size:.85rem;color:var(--chalk-dim);font-variant-numeric:tabular-nums}
+.toggle{display:flex;gap:10px;align-items:center;cursor:pointer;font-weight:600}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.divider{height:1px;background:var(--paper-line)}
+.wait-box{background:var(--paper-2);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px}
+
+/* Personas */
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.pcard{background:var(--paper);border:0;border-top:6px solid var(--pc,var(--n-none));border-radius:3px;padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px;box-shadow:var(--pin-shadow)}
+.pcard:hover{transform:translateY(-2px)}
+.pcard[aria-pressed="true"]{outline:3px solid var(--hi);outline-offset:3px}
+.pcard .pn{font-weight:800;font-size:1.05rem;display:flex;align-items:center;gap:8px}
+.counts{display:flex;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--mut)}
+.counts b{color:var(--fg);font-variant-numeric:tabular-nums}
+form.row .field{background:var(--paper)}
+
+/* Cierre */
+.steps{display:flex;flex-direction:column;gap:16px}
+.step{background:var(--paper);border-radius:4px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--pin-shadow)}
+.step-h{display:flex;gap:12px;align-items:center}
+.step-n{width:30px;height:30px;border-radius:50%;background:var(--paper-ink);color:var(--paper);display:grid;place-items:center;font-weight:800;font-size:.9rem;flex:none}
+.star{border:1px solid var(--paper-line);background:#fff;border-radius:6px;width:38px;height:38px;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;flex:none;color:var(--paper-muted)}
+.star[aria-pressed="true"]{background:var(--hi);border-color:var(--hi);color:var(--hi-ink)}
+.insight{background:var(--n0);color:var(--paper-ink);border-radius:2px;padding:14px 16px;font-weight:600;box-shadow:0 1px 1px rgba(0,0,0,.2)}
+.insight .big{font-family:var(--f-marker);font-size:2.2rem;font-weight:700;display:block;line-height:1}
+.step .win-count{color:var(--good)}
+
+/* Seguridad */
+.cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.cards2{grid-template-columns:1fr}}
+.box{background:var(--paper);border-radius:4px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--pin-shadow)}
+.box p{margin:0}
+.muted{color:var(--mut)}
+.small{font-size:.86rem}
+textarea.field{min-height:90px;font-size:.8rem}
+.ok-line{color:var(--good);font-weight:700}
+.err-line{color:var(--warn);font-weight:700}
+
+/* Entrada / bloqueo */
+.lock{position:fixed;inset:0;background:var(--board);z-index:50;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.lock-card{width:100%;max-width:440px;display:flex;flex-direction:column;gap:14px;text-align:center;background:var(--paper);padding:30px 26px 26px;border-radius:4px;box-shadow:var(--pin-shadow);position:relative}
+.lock-card::before{content:"";position:absolute;top:10px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8E9590,#4C5350)}
+.lock-card h2{font-family:var(--f-marker);font-weight:700;font-size:2.4rem;margin:6px 0 0;line-height:1}
+.lock-card form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.lock-card .lk-mark{background:var(--n0);padding:0 8px;display:inline-block;transform:rotate(-2deg)}
+.lock-card .lk-note{font-size:.85rem;color:var(--paper-muted)}
+.lock-card .lk-err{color:var(--warn);font-weight:700;background:var(--warn-soft);padding:8px 12px;border-radius:6px;margin:0}
+.lock-card .lk-steps{text-align:left;margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.lock-card .muted{color:var(--paper-muted)}
+.save-st{font-size:.82rem;color:var(--chalk-dim);display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.save-st::before{content:"";width:7px;height:7px;border-radius:50%;background:#6FCF97}
+.save-st.saving::before{background:var(--hi)}
+.save-st.error{color:#FFB4A3}
+.save-st.error::before{background:var(--warn)}
+
+/* Toast y confeti */
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(16px);background:var(--paper);padding:11px 18px;border-radius:6px;font-weight:700;opacity:0;pointer-events:none;transition:.22s ease;z-index:60;max-width:calc(100% - 32px);box-shadow:var(--pin-shadow);border-left:5px solid var(--good)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.confetti{position:fixed;width:10px;height:10px;border-radius:1px;pointer-events:none;z-index:70;animation:pop .9s cubic-bezier(.2,.7,.4,1) forwards;box-shadow:0 1px 1px rgba(0,0,0,.3)}
+@keyframes pop{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
+@media (prefers-reduced-motion: reduce){.confetti{display:none}.bar i,.btn,.toast{transition:none}}
+/* Archivo: fichas */
+.ficha{--fg:var(--paper-ink);--mut:var(--paper-muted);--ln:var(--paper-line);--sf2:var(--paper-2);--inv:var(--paper);color:var(--paper-ink)}
+.fichas{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;align-items:start}
+.ficha{background:var(--paper);border-top:5px solid var(--pc,var(--n-none));border-radius:3px;padding:14px 16px;display:flex;flex-direction:column;gap:7px;box-shadow:var(--pin-shadow);min-width:0;
+  background-image:repeating-linear-gradient(180deg,transparent 0 25px,rgba(47,91,211,.06) 25px 26px);background-position:0 54px}
+.box .ficha{box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ficha-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kind{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.ficha-t{font-weight:800;font-size:1.08rem;line-height:1.25;overflow-wrap:anywhere}
+.ficha-sub{font-size:.86rem;color:var(--mut);overflow-wrap:anywhere}
+.ficha-sub b{color:var(--fg)}
+.ficha-b{font-size:.9rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.ficha-a{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px;padding-top:8px;border-top:1px solid var(--paper-line)}
+.ficha .more{color:var(--accent);padding:0}
+.kv{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;background:#fff;border:1px solid var(--paper-line);border-radius:6px;padding:5px 6px 5px 10px}
+.kv .k{font-size:.68rem;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;width:40px;flex:none}
+.kv .btn{flex:none}
+.kv .v{flex:1;min-width:0;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;user-select:all}
+.pinbtn{border:0;background:transparent;font-size:1.05rem;cursor:pointer;color:var(--mut);padding:0 2px;line-height:1}
+.pinbtn[aria-pressed="true"]{color:#B8901A}
+.tagbtn{border:0;cursor:pointer;font-family:inherit}
+.tagbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.searchbar{background:var(--paper);border-radius:6px;padding:4px 6px 4px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--pin-shadow)}
+.searchbar::before{content:"Buscar";font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-muted)}
+.search-in{flex:1;min-width:0;border:0;background:transparent;font-size:1.05rem;padding:11px 0;outline:none;font-weight:600;color:var(--paper-ink)}
+.board-chips{margin-top:-6px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.grid2 > div{display:flex;flex-direction:column;gap:4px;min-width:0}
+textarea.note-area{min-height:130px;font-family:var(--f-ui);font-size:.95rem}
+.more{background:none;border:0;color:var(--chalk-dim);font-weight:700;cursor:pointer;padding:4px 0;text-align:left;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+.list .more{color:var(--accent);padding:12px 16px}
+</style>
+</head>
+<body>
+<div id="lock" class="lock">
+  <div class="lock-card">
+    <h2><span class="lk-mark">Foco</span> Diario</h2>
+    <div id="lockBody" style="display:flex;flex-direction:column;gap:14px"><p class="muted">Cargando…</p></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <div class="top">
+      <div class="brand"><h1><span>Foco</span> Diario</h1><span class="today" id="todayLbl"></span></div>
+      <div class="top-actions">
+        <span class="streak" id="winPill"></span><span class="save-st" id="saveStatus">Guardado</span><button class="btn small" id="lockBtn" data-act="lock">Bloquear</button>
+      </div>
+    </div>
+    <form class="capture" id="capForm" autocomplete="off">
+      <input id="capIn" maxlength="200" placeholder="Saca de tu cabeza… Ej: Laura: reservar sala jueves" aria-label="Capturar pendiente">
+      <button class="btn primary" type="submit">Capturar</button>
+    </form>
+    <div class="capture-hint" id="capHint"></div>
+    <div class="tabs-scroll"><nav class="tabs" role="tablist" id="tabs"></nav></div>
+  </header>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+const KEY = 'foco-diario-v1';
+const MAX_NOW = 3;
+const PCOLORS = ['--p0','--p1','--p2','--p3','--p4','--p5'];
+const DAYS = ['dom','lun','mar','mié','jue','vie','sáb'];
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today = () => iso(new Date());
+const addDays = n => { const d = new Date(); d.setDate(d.getDate()+n); return iso(d); };
+const friday = () => { const d = new Date(); let add = (5 - d.getDay() + 7) % 7; if (add === 0 && d.getHours() >= 15) add = 7; if (d.getDay()===6) add=6; d.setDate(d.getDate()+add); return iso(d); };
+const parseISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+function fmtDay(s){
+  if (!s) return '';
+  const t = today();
+  if (s === t) return 'hoy';
+  if (s === addDays(1)) return 'mañana';
+  if (s === addDays(-1)) return 'ayer';
+  const d = parseISO(s);
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+const mins = ms => Math.max(0, Math.round(ms/60000));
+const clock = ms => { const s = Math.max(0, Math.floor(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+
+/* ---------- Estado: archivo cifrado en tu carpeta ---------- */
+const DATA = 'datos.focodata';
+const ITER = 600000;
+let S = null, KEYC = null, SALT = null, dirH = null;
+let saveT = null, saveState = 'ok', lastSavedAt = null, bkDay = null;
+let writing = Promise.resolve();
+function setSave(st){
+  saveState = st;
+  const el = document.getElementById('saveStatus'); if (!el) return;
+  el.className = 'save-st ' + (st==='ok'?'':st);
+  el.textContent = st==='saving' ? 'Guardando…' : st==='error' ? 'No se pudo guardar' : 'Guardado y cifrado';
+  if (st==='error' && view==='ahora' && S) render();
+}
+function save(){ if (!S) return; clearTimeout(saveT); setSave('saving'); saveT = setTimeout(()=>{ saveT=null; flush(); }, 500); }
+function flush(){
+  writing = writing.then(async () => {
+    if (!S || !KEYC || !dirH) return;
+    try {
+      const txt = await encryptWith(KEYC, SALT, S);
+      await writeFile(dirH, DATA, txt);
+      lastSavedAt = Date.now();
+      try { await dailyBackup(txt); } catch(e){}
+      setSave('ok');
+    } catch(e){ setSave('error'); }
+  });
+  return writing;
+}
+async function writeFile(dir, name, txt){
+  const fh = await dir.getFileHandle(name, {create:true});
+  const w = await fh.createWritable(); await w.write(txt); await w.close();
+}
+async function dailyBackup(txt){
+  if (bkDay === today()) return;
+  const d = await dirH.getDirectoryHandle('respaldos', {create:true});
+  await writeFile(d, `respaldo-${today()}.focodata`, txt);
+  bkDay = today();
+  const names = [];
+  for await (const [n,h] of d.entries()) if (h.kind==='file' && /^respaldo-\d{4}-\d{2}-\d{2}\.focodata$/.test(n)) names.push(n);
+  names.sort().reverse().slice(14).forEach(n => d.removeEntry(n).catch(()=>{}));
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='hidden' && saveT){ clearTimeout(saveT); saveT=null; flush(); } });
+window.addEventListener('beforeunload', e => { if (saveT || saveState==='saving'){ e.preventDefault(); e.returnValue=''; } });
+
+function examples(){
+  const t = today(), now = Date.now();
+  const p = [
+    {id:'exL', name:'Laura', color:0, ex:true},
+    {id:'exC', name:'Carlos', color:1, ex:true},
+    {id:'exS', name:'Sofía', color:2, ex:true},
+  ];
+  const it = (o) => Object.assign({id:uid(), text:'', action:'', personId:null, status:'inbox', due:null, blocking:false, createdAt:now, ex:true}, o);
+  return { v:1, people:p, items:[
+    it({text:'sala junta jueves', action:'Confirmar sala para la junta del jueves', personId:'exL', status:'now', due:t, blocking:true}),
+    it({text:'viáticos', action:'Mandar reporte de viáticos de octubre', personId:'exC', status:'now', due:t}),
+    it({text:'contratos', action:'Imprimir contratos para firma', personId:'exS', status:'next', due:addDays(1)}),
+    it({text:'comida proveedor', action:'Agendar comida con proveedor nuevo', personId:'exL', status:'next', due:friday()}),
+    it({text:'Laura: cambiar vuelo del lunes', personId:'exL', status:'inbox'}),
+    it({text:'pedir tóner para la impresora', status:'inbox'}),
+    it({text:'factura octubre', action:'Factura de octubre del proveedor', personId:'exC', status:'waiting', followUp:t, waitingOn:'Proveedor'}),
+    it({text:'correo agenda', action:'Responder correo de agenda semanal', personId:'exL', status:'done', doneAt:now-3600e3, estimate:10, actual:18}),
+  ], notes:[
+    {id:uid(), type:'contact', title:'Lic. Andrea Ruiz (ejemplo)', company:'Socia de Laura en Grupo Norte', phone:'55 1234 5678', email:'andrea.ruiz@ejemplo.com', personId:'exL', body:'Prefiere WhatsApp. Su asistente es Paty.', tags:['socios'], pinned:true, ex:true, createdAt:now, updatedAt:now},
+    {id:uid(), type:'contact', title:'Ing. Roberto Salas (ejemplo)', company:'Socio de Carlos, despacho contable', phone:'55 8765 4321', email:'', personId:'exC', body:'Llamar antes de las 2 pm.', tags:['socios','contabilidad'], ex:true, createdAt:now, updatedAt:now-1000},
+    {id:uid(), type:'note', title:'Cómo pedir viáticos (ejemplo)', body:'1. Llenar el formato en la intranet.\n2. Adjuntar facturas en PDF.\n3. Mandar a Carlos para firma antes del día 25.', personId:'exC', tags:['procesos'], ex:true, createdAt:now, updatedAt:now-2000},
+  ], settings:{autoLock:10, lastBackup:null}, timer:null, lastOpen:t, closedOn:null };
+}
+function normalize(){
+  S.settings = Object.assign({autoLock:10, lastBackup:null}, S.settings||{});
+  delete S.settings.pinHash; delete S.settings.pinSalt;
+  S.people = S.people || []; S.items = S.items || []; S.notes = S.notes || [];
+}
+// Rutina de la mañana: lo marcado con estrella pasa a "Ahora"
+function morning(){
+  const t = today();
+  if (S.lastOpen && S.lastOpen !== t){
+    let room = MAX_NOW - S.items.filter(i => i.status==='now').length;
+    S.items.filter(i => i.tomorrow && i.status!=='done').forEach(i => {
+      if (room > 0 && i.status !== 'now'){ i.status = 'now'; room--; }
+      i.tomorrow = false;
+    });
+  }
+  const changed = S.lastOpen !== t;
+  S.lastOpen = t;
+  return changed;
+}
+
+/* ---------- Consultas ---------- */
+const person = id => S.people.find(p => p.id === id);
+const byStatus = st => S.items.filter(i => i.status === st);
+const label = i => i.action || i.text;
+function score(i){
+  let s = 0; const t = today();
+  if (i.due && i.due < t) s += 5; else if (i.due === t) s += 3; else if (i.due === addDays(1)) s += 1;
+  if (i.blocking) s += 2;
+  return s;
+}
+const nextSorted = () => byStatus('next').sort((a,b) => score(b)-score(a) || (a.due||'9').localeCompare(b.due||'9') || a.createdAt-b.createdAt);
+const followToday = () => byStatus('waiting').filter(i => !i.followUp || i.followUp <= today());
+const doneToday = () => S.items.filter(i => i.status==='done' && i.doneAt && iso(new Date(i.doneAt)) === today()).sort((a,b)=>b.doneAt-a.doneAt);
+const hasEx = () => S.items.some(i=>i.ex) || S.people.some(p=>p.ex) || S.notes.some(n=>n.ex);
+
+/* ---------- Fragmentos de UI ---------- */
+function pTag(id){
+  const p = person(id);
+  if (!p) return `<span class="tag person"><span class="dot" style="background:var(--line)"></span>Sin persona</span>`;
+  return `<span class="tag person"><span class="dot" style="background:var(${PCOLORS[p.color%6]})"></span>${esc(p.name)}</span>`;
+}
+function dueTag(i){
+  if (!i.due) return '';
+  const t = today();
+  if (i.due < t) return `<span class="tag due-late">Venció ${esc(fmtDay(i.due))}</span>`;
+  if (i.due === t) return `<span class="tag due-today">Para hoy</span>`;
+  return `<span class="tag">Para ${esc(fmtDay(i.due))}</span>`;
+}
+const blockTag = i => i.blocking ? `<span class="tag block">Alguien te espera</span>` : '';
+
+/* ---------- Vistas ---------- */
+let view = 'ahora';
+const TABS = [
+  ['ahora','Tablero'], ['procesar','Procesar'], ['esperando','Esperando de…'], ['personas','Personas'], ['archivo','Archivo'], ['cierre','Cerrar el día'], ['seguridad','Seguridad']
+];
+let showAllNext = false;
+let selPerson = null;
+let proc = null;   // borrador mientras procesas
+let ui = {};       // pequeños estados de interfaz
+
+function renderTabs(){
+  const nw = doneToday().length;
+  $('#winPill').textContent = nw ? `${nw} ${nw===1?'hecha':'hechas'} hoy` : 'Día en blanco, a empezar';
+  const nIn = byStatus('inbox').length, nF = followToday().length;
+  $('#tabs').innerHTML = TABS.map(([k,l]) => {
+    let b = '';
+    if (k==='procesar' && nIn) b = `<span class="badge">${nIn}</span>`;
+    if (k==='esperando' && nF) b = `<span class="badge alert">${nF}</span>`;
+    return `<button class="tab" role="tab" aria-selected="${view===k}" data-act="tab" data-v="${k}">${l}${b}</button>`;
+  }).join('');
+  
+}
+
+const noteVar = pid => { const p = person(pid); return p ? `var(--n${p.color%6})` : 'var(--n-none)'; };
+function mini(i, kind){
+  const acts = kind==='wait'
+    ? `<button class="btn tiny" data-act="wDone" data-id="${i.id}">Ya llegó</button><button class="btn tiny ghost" data-act="wBump" data-id="${i.id}">+2 días</button>`
+    : `<button class="btn tiny" data-act="toNow" data-id="${i.id}" ${byStatus('now').length>=MAX_NOW?'disabled title="Ahora está lleno"':''}>A Ahora</button><button class="btn tiny ghost" data-act="done" data-id="${i.id}">Hecho</button>`;
+  const extra = kind==='wait'
+    ? `<span class="tag ${(!i.followUp||i.followUp<=today())?'due-late':''}">${(!i.followUp||i.followUp<=today())?'Preguntar hoy':'Preguntar '+esc(fmtDay(i.followUp))}</span>`
+    : dueTag(i)+blockTag(i);
+  return `<div class="mini" style="--note:${noteVar(i.personId)}"><div class="mini-s">${pTag(i.personId)}</div><div class="mini-t">${esc(label(i))}</div><div class="mini-s">${extra}</div><div class="mini-a">${acts}</div></div>`;
+}
+function vAhora(){
+  const now = byStatus('now'), next = nextSorted(), fol = followToday(), inbox = byStatus('inbox'), wins = doneToday();
+  const wait = byStatus('waiting').sort((a,b)=>(a.followUp||'').localeCompare(b.followUp||''));
+  let b = '';
+  if (hasEx()) b += `<div class="banner ex"><p><strong>Estás viendo ejemplos.</strong> Así se ve un día con pendientes. Cuando quieras, bórralos y empieza con los tuyos.</p><button class="btn primary small" data-act="clearEx">Borrar ejemplos y empezar</button></div>`;
+  if (saveState==='error') b += `<div class="banner follow"><p><strong>No se pudo guardar en tu carpeta.</strong> Revisa que la carpeta Foco Diario siga en su lugar. Bloquea y vuelve a abrir para reintentar.</p><button class="btn small" data-act="retrySave">Reintentar</button></div>`;
+  if (fol.length) b += `<div class="banner follow"><p><strong>Hoy toca dar seguimiento:</strong> ${fol.slice(0,3).map(i=>esc(label(i))).join(' · ')}${fol.length>3?` y ${fol.length-3} más`:''}</p><button class="btn small" data-act="tab" data-v="esperando">Ver seguimientos</button></div>`;
+  if (inbox.length) b += `<div class="banner"><p><strong>${inbox.length} ${inbox.length===1?'cosa capturada':'cosas capturadas'}</strong> sin decidir todavía. Procesar toma un par de minutos.</p><button class="btn hi small" data-act="tab" data-v="procesar">Procesar ahora</button></div>`;
+  let h = b ? `<div class="banners">${b}</div>` : '';
+
+  h += `<div class="board"><section class="col col-now"><header class="col-h"><h2 class="marker">Ahora</h2><span class="col-c">${now.length} de ${MAX_NOW} · lo demás puede esperar</span></header><div class="slots">`;
+  for (let k=0;k<MAX_NOW;k++){
+    const i = now[k];
+    if (!i){
+      h += `<div class="slot empty"><span class="num">0${k+1}</span><p style="margin:0">Espacio libre.</p>${next.length?`<button class="btn small" data-act="pullNext">Traer la más urgente</button>`:`<span class="small">Captura algo arriba o procesa tu bandeja.</span>`}</div>`;
+      continue;
+    }
+    const running = S.timer && S.timer.id === i.id;
+    h += `<article class="slot ${running?'running':''}" style="--note:${noteVar(i.personId)}">
+      <div class="row" style="justify-content:space-between"><span class="num">0${k+1}</span>${pTag(i.personId)}</div>
+      <div class="act">${esc(label(i))}</div>
+      ${i.action && i.text && i.text!==i.action ? `<div class="orig">Nota: ${esc(i.text)}</div>`:''}
+      <div class="meta">${dueTag(i)}${blockTag(i)}</div>
+      <div class="slot-foot">${running ? timerBlock(i) : `
+        <span class="est-label">¿Cuánto crees que tardas? Toca para empezar</span>
+        <div class="row">${[5,15,25,45].map(m=>`<button class="chip" data-act="start" data-id="${i.id}" data-m="${m}">${m} min</button>`).join('')}</div>
+        <div class="row"><button class="btn good small" data-act="done" data-id="${i.id}">Terminé</button><button class="btn ghost small" data-act="toNext" data-id="${i.id}">Sacar</button></div>`}
+      </div></article>`;
+  }
+  h += `</div></section><aside class="col col-side">`;
+  const shown = showAllNext ? next : next.slice(0,4);
+  h += `<section><header class="col-h"><h3 class="marker sm">Siguientes</h3><span class="col-c">${next.length}</span></header>`;
+  h += next.length ? `<div class="minis">${shown.map(i=>mini(i,'next')).join('')}</div>${next.length>4?`<button class="more" data-act="moreNext">${showAllNext?'Ver menos':`Ver las ${next.length}`}</button>`:''}` : `<p class="col-empty">Nada en fila. Lo que proceses aparece aquí, ordenado por urgencia.</p>`;
+  h += `</section><section><header class="col-h"><h3 class="marker sm">Esperando de…</h3><span class="col-c">${wait.length}</span></header>`;
+  h += wait.length ? `<div class="minis">${wait.slice(0,4).map(i=>mini(i,'wait')).join('')}</div>${wait.length>4?`<button class="more" data-act="tab" data-v="esperando">Ver las ${wait.length}</button>`:''}` : `<p class="col-empty">No esperas nada de nadie.</p>`;
+  h += `</section></aside></div>`;
+  h += `<section class="done-strip"><div class="row" style="justify-content:space-between;align-items:baseline"><h3 class="marker sm">Hecho hoy</h3><span class="win-count">${wins.length}</span></div>
+    <div class="wins">${wins.length ? wins.slice(0,10).map(i=>`<span class="win">${esc(label(i))}</span>`).join('') : `<span class="small" style="color:var(--chalk-dim)">Lo que termines se pega aquí.</span>`}</div></section>`;
+  return h;
+}
+
+function timerBlock(i){
+  return `<div class="timer" data-timer="${i.id}">
+    <div class="bar" id="bar-${i.id}"><i style="width:0%"></i></div>
+    <div class="timer-txt"><span><b id="clk-${i.id}">0:00</b> <span class="muted">de ${S.timer.est} min</span></span><span class="muted" id="msg-${i.id}"></span></div>
+    <div class="row">
+      <button class="btn good small" data-act="done" data-id="${i.id}">Terminé</button>
+      <button class="btn small" data-act="pause" data-id="${i.id}" id="pz-${i.id}">${S.timer.startedAt?'Pausar':'Seguir'}</button>
+      <button class="btn small ghost" data-act="stopTimer">Cancelar tiempo</button>
+    </div></div>`;
+}
+
+function vProcesar(){
+  const inbox = byStatus('inbox');
+  if (!inbox.length){ proc = null; return `<section><h2 class="h2"><span class="mark">Bandeja vacía</span></h2><p class="sub">Todo tiene su lugar. Cuando captures algo arriba, aquí decides qué es y de quién.</p></section>
+    <div class="row"><button class="btn primary" data-act="tab" data-v="ahora">Ir a Ahora</button></div>`; }
+  if (!proc || !inbox.find(i=>i.id===proc.id)){
+    const i = inbox[0];
+    const guess = guessPerson(i.text);
+    proc = {id:i.id, personId:i.personId || guess.id || null, action:i.action || guess.rest || i.text, due:i.due||null, blocking:!!i.blocking, waiting:false, waitingOn:'', follow:addDays(2), newP:false};
+  }
+  const i = S.items.find(x=>x.id===proc.id);
+  const pos = inbox.indexOf(i)+1;
+  const dueOpts = [['Hoy',today()],['Mañana',addDays(1)],['Esta semana',friday()],['Sin fecha',null]];
+  return `<section><div class="section-head"><div><h2 class="h2"><span class="mark">Procesar</span></h2><p class="sub">Una a la vez. Tres preguntas y listo.</p></div><span class="progress">${pos} de ${inbox.length}</span></div></section>
+  <div class="proc">
+    <div><div class="small muted">Capturaste:</div><div class="proc-text">${esc(i.text)}</div></div>
+    <div class="q"><span class="ql">1. ¿De quién es?</span>
+      <div class="chips">${S.people.map(p=>`<button class="chip" aria-pressed="${proc.personId===p.id}" data-act="pPick" data-id="${p.id}"><span class="dot" style="background:var(${PCOLORS[p.color%6]})"></span>${esc(p.name)}</button>`).join('')}
+      <button class="chip" aria-pressed="${proc.personId==='me'}" data-act="pPick" data-id="me">Mío</button>
+      <button class="chip" data-act="pNew">+ Persona nueva</button></div>
+      ${proc.newP?`<form class="row" data-form="newPerson"><input class="field" id="npName" maxlength="40" placeholder="Nombre (solo el nombre, sin datos personales)" style="flex:1;min-width:180px"><button class="btn small primary">Agregar</button></form>`:''}
+    </div>
+    <div class="q"><label for="pAction">2. ¿Cuál es la siguiente acción física?</label>
+      <input class="field" id="pAction" maxlength="160" value="${esc(proc.action)}">
+      <span class="help">Empieza con un verbo que puedas hacer ya: llamar, mandar, imprimir, preguntar.</span></div>
+    <div class="q"><span class="ql">3. ¿Para cuándo?</span>
+      <div class="chips">${dueOpts.map(([l,v])=>`<button class="chip" aria-pressed="${proc.due===v}" data-act="pDue" data-v="${v||''}">${l}</button>`).join('')}</div>
+      <label class="toggle"><input type="checkbox" id="pBlock" ${proc.blocking?'checked':''}> Alguien está esperando esto de mí</label>
+    </div>
+    <div class="divider"></div>
+    <div class="row">
+      <button class="btn hi big" data-act="pTwo">Toma menos de 2 min: lo hago ya</button>
+    </div>
+    <div class="row">
+      <button class="btn primary" data-act="pSave" data-to="next">Guardar en Siguientes</button>
+      <button class="btn" data-act="pSave" data-to="now" ${byStatus('now').length>=MAX_NOW?'disabled title="Ahora está lleno"':''}>Ponerla en Ahora</button>
+      <button class="btn" data-act="pWait" aria-pressed="${proc.waiting}">Espero a alguien</button>
+      <button class="btn" data-act="pRef">Es información: guardar en Archivo</button>
+    </div>
+    ${proc.waiting?`<div class="wait-box">
+      <label for="pWaitOn" class="small" style="font-weight:700">¿De quién o de qué esperas respuesta?</label>
+      <input class="field" id="pWaitOn" maxlength="60" value="${esc(proc.waitingOn)}" placeholder="Ej: Proveedor, Contabilidad">
+      <span class="small" style="font-weight:700">¿Cuándo vuelves a preguntar?</span>
+      <div class="chips">${[['Mañana',addDays(1)],['En 2 días',addDays(2)],['En una semana',addDays(7)]].map(([l,v])=>`<button class="chip" aria-pressed="${proc.follow===v}" data-act="pFollow" data-v="${v}">${l}</button>`).join('')}</div>
+      <div><button class="btn primary" data-act="pSave" data-to="waiting">Guardar en Esperando</button></div></div>`:''}
+    <div class="row" style="justify-content:space-between">
+      <button class="btn ghost small" data-act="pSkip">Saltar por ahora</button>
+      <button class="btn ghost small danger" data-act="pDel">Ya no aplica, borrar</button>
+    </div>
+  </div>`;
+}
+
+function vEsperando(){
+  const w = byStatus('waiting').sort((a,b)=>(a.followUp||'').localeCompare(b.followUp||''));
+  let h = `<section><h2 class="h2"><span class="mark">Esperando de…</span></h2><p class="sub">Lo que pediste a otros. La app te recuerda cuándo volver a preguntar, así no tienes que acordarte.</p></section>`;
+  if (!w.length) return h + `<div class="list"><p class="empty-msg">No esperas nada de nadie. Cuando delegues algo, al procesarlo elige "Espero a alguien".</p></div>`;
+  const t = today();
+  h += `<div class="list">` + w.map(i => {
+    const due = !i.followUp || i.followUp <= t;
+    return `<div class="li"><div class="txt"><div class="t">${esc(label(i))}</div>
+      <div class="s">${pTag(i.personId)}${i.waitingOn?`<span class="tag">Espero a: ${esc(i.waitingOn)}</span>`:''}
+      <span class="tag ${due?'due-late':''}">${due?'Preguntar hoy':'Preguntar '+esc(fmtDay(i.followUp))}</span></div></div>
+      <button class="btn small good" data-act="wDone" data-id="${i.id}">Ya llegó</button>
+      <button class="btn small" data-act="wBump" data-id="${i.id}">Pregunté, recuérdame en 2 días</button>
+      <button class="btn small ghost" data-act="wNext" data-id="${i.id}">Pasar a Siguientes</button></div>`;
+  }).join('') + `</div>`;
+  return h;
+}
+
+function vPersonas(){
+  let h = `<section><h2 class="h2"><span class="mark">Personas</span></h2><p class="sub">Cuando alguien te pregunte "¿cómo va lo mío?", toca su nombre.</p></section>`;
+  const weekAgo = Date.now() - 7*864e5;
+  h += `<div class="people">` + S.people.map(p => {
+    const its = S.items.filter(i=>i.personId===p.id);
+    const c = st => its.filter(i=>i.status===st).length;
+    const dw = its.filter(i=>i.status==='done' && i.doneAt>weekAgo).length;
+    return `<button class="pcard" style="--pc:var(--n${p.color%6})" data-act="pSel" data-id="${p.id}" aria-pressed="${selPerson===p.id}">
+      <span class="pn"><span class="dot" style="width:14px;height:14px;background:var(${PCOLORS[p.color%6]})"></span>${esc(p.name)}</span>
+      <span class="counts"><span><b>${c('now')+c('next')+c('inbox')}</b> pendientes</span><span><b>${c('waiting')}</b> esperando</span><span><b>${dw}</b> hechas (7 días)</span></span></button>`;
+  }).join('') + `</div>`;
+  h += `<form class="row" data-form="addPerson"><input class="field" id="addPName" maxlength="40" placeholder="Agregar persona (solo nombre o puesto)" style="flex:1;min-width:200px"><button class="btn primary">Agregar</button></form>`;
+  if (selPerson && person(selPerson)){
+    const p = person(selPerson);
+    const its = S.items.filter(i=>i.personId===p.id);
+    const groups = [['now','En Ahora'],['next','Siguientes'],['inbox','Sin procesar'],['waiting','Esperando respuesta'],['done','Terminado']];
+    h += `<section class="box"><div class="section-head"><h3 class="h3">Todo lo de ${esc(p.name)}</h3>
+      <div class="row">${ui.confirmDelP===p.id?`<span class="small">¿Quitar a ${esc(p.name)}? Sus tareas se quedan sin persona.</span><button class="btn small danger" data-act="delP" data-id="${p.id}">Sí, quitar</button><button class="btn small ghost" data-act="cancelDelP">No</button>`:`<button class="btn small ghost danger" data-act="askDelP" data-id="${p.id}">Quitar persona</button>`}</div></div>`;
+    if (!its.length) h += `<p class="muted">Todavía no hay nada de ${esc(p.name)}.</p>`;
+    groups.forEach(([st,l]) => {
+      let g = its.filter(i=>i.status===st);
+      if (st==='done') g = g.sort((a,b)=>b.doneAt-a.doneAt).slice(0,10);
+      if (!g.length) return;
+      h += `<div><div class="small muted" style="font-weight:700;margin-bottom:6px">${l}</div><div class="list">` +
+        g.map(i=>`<div class="li ${st==='done'?'done':''}"><div class="txt"><div class="t">${esc(label(i))}</div><div class="s">${dueTag(i)}${st==='waiting'&&i.followUp?`<span class="tag">Preguntar ${esc(fmtDay(i.followUp))}</span>`:''}${st==='done'?`<span class="tag">${esc(fmtDay(iso(new Date(i.doneAt))))}</span>`:''}</div></div></div>`).join('') + `</div></div>`;
+    });
+    const pn = S.notes.filter(n => n.personId===p.id);
+    if (pn.length) h += `<div><div class="small muted" style="font-weight:700;margin-bottom:6px">Contactos y notas</div><div class="fichas">${pn.map(ficha).join('')}</div></div>`;
+    h += `</section>`;
+  }
+  return h;
+}
+
+function estInsight(){
+  const d = S.items.filter(i=>i.status==='done' && i.estimate && i.actual);
+  if (d.length < 3) return `<div class="box"><p class="muted">Cuando termines 3 tareas usando el temporizador, aquí verás cuánto tardas de verdad comparado con lo que calculas.</p><p class="small muted">Llevas ${d.length} de 3.</p></div>`;
+  const r = d.reduce((s,i)=>s+i.actual,0) / d.reduce((s,i)=>s+i.estimate,0);
+  const f = r.toFixed(1).replace('.0','');
+  let msg = r > 1.15 ? `Tus tareas toman ${f} veces lo que calculas. Mañana, cuando pienses "15 min", aparta ${Math.round(15*r)}.` :
+            r < 0.85 ? `Terminas más rápido de lo que calculas (${f}×). Puedes darte estimados más cortos.` :
+            `Tus estimados son muy precisos. Bien calibrada.`;
+  return `<div class="insight"><span class="big">${f}×</span>${msg}<div class="small" style="font-weight:500;margin-top:6px">Basado en ${d.length} tareas con tiempo medido.</div></div>`;
+}
+
+function vCierre(){
+  const fol = byStatus('waiting').filter(i => !i.followUp || i.followUp <= addDays(1));
+  const cand = [...byStatus('now'), ...nextSorted()];
+  const starred = S.items.filter(i=>i.tomorrow && i.status!=='done').length;
+  const wins = doneToday();
+  const lb = S.settings.lastBackup;
+  const daysNoBk = lb ? Math.floor((Date.now()-lb)/864e5) : null;
+  let h = `<section><h2 class="h2"><span class="mark">Cerrar el día</span></h2><p class="sub">Cinco minutos para dejar todo en su lugar y no llevarte los pendientes a casa.</p></section><div class="steps">`;
+  h += `<div class="step"><div class="step-h"><span class="step-n">1</span><h3 class="h3">Revisa lo que esperas de otros</h3></div>` +
+    (fol.length ? `<div class="list">${fol.map(i=>`<div class="li"><div class="txt"><div class="t">${esc(label(i))}</div><div class="s">${pTag(i.personId)}<span class="tag">Preguntar ${esc(fmtDay(i.followUp)||'hoy')}</span></div></div><button class="btn small good" data-act="wDone" data-id="${i.id}">Ya llegó</button><button class="btn small" data-act="wBump" data-id="${i.id}">+2 días</button></div>`).join('')}</div>`
+     : `<p class="muted" style="margin:0">Nada pendiente de seguimiento para hoy o mañana.</p>`) + `</div>`;
+  h += `<div class="step"><div class="step-h"><span class="step-n">2</span><h3 class="h3">Elige tus 3 de mañana <span class="muted small">(${starred}/3)</span></h3></div>
+    <p class="small muted" style="margin:0">Mañana al abrir la app, estas aparecen solas en Ahora.</p>` +
+    (cand.length ? `<div class="list">${cand.slice(0,12).map(i=>`<div class="li"><button class="star" data-act="star" data-id="${i.id}" aria-pressed="${!!i.tomorrow}" aria-label="Elegir para mañana">${i.tomorrow?'★':'☆'}</button><div class="txt"><div class="t">${esc(label(i))}</div><div class="s">${pTag(i.personId)}${dueTag(i)}${i.status==='now'?'<span class="tag">En Ahora</span>':''}</div></div></div>`).join('')}</div>` : `<p class="muted" style="margin:0">No tienes pendientes en fila. Descansa.</p>`) + `</div>`;
+  h += `<div class="step"><div class="step-h"><span class="step-n">3</span><h3 class="h3">Lo que lograste hoy</h3></div>
+    <div class="row" style="gap:16px;align-items:center"><span class="win-count">${wins.length}</span><div class="wins" style="flex:1;min-width:0">${wins.map(i=>`<span class="win">✓ ${esc(label(i))}</span>`).join('') || '<span class="muted">Hoy fue de apagar fuegos, y eso también es trabajo.</span>'}</div></div>${estInsight()}</div>`;
+  if (daysNoBk === null || daysNoBk >= 7) h += `<div class="banner follow"><p><strong>${daysNoBk===null?'Aún no tienes copia fuera de la computadora.':`Llevas ${daysNoBk} días sin copia en USB.`}</strong> Si la computadora falla, esa copia te salva.</p><button class="btn small" data-act="tab" data-v="seguridad">Hacer copia</button></div>`;
+  h += `<div class="row"><button class="btn primary big" data-act="closeDay">Cerrar el día</button>${S.closedOn===today()?'<span class="ok-line">Día cerrado. Hasta mañana.</span>':''}</div></div>`;
+  return h;
+}
+
+function vSeguridad(){
+  const s = S.settings;
+  const lb = s.lastBackup ? new Date(s.lastBackup) : null;
+  const ls = lastSavedAt ? new Date(lastSavedAt).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : null;
+  return `<section><h2 class="h2"><span class="mark">Seguridad</span></h2><p class="sub">Tus pendientes viven en un archivo cifrado en tu computadora. No se envían a ningún servidor ni a Claude, y borrar el historial o actualizar Edge no los toca.</p></section>
+  <div class="cards2">
+  <div class="box"><h3 class="h3">Dónde están tus datos</h3>
+    <p class="small">Carpeta: <b>${esc(dirH ? dirH.name : '')}</b><br>Archivo: <b>${DATA}</b>, cifrado con AES-256 y tu contraseña.</p>
+    <p class="small">${saveState==='error'?'<span class="err-line">El último guardado falló.</span>':ls?`<span class="ok-line">Guardado a las ${esc(ls)}.</span>`:'Se guarda solo con cada cambio.'}</p>
+    <p class="small muted">Cada día se guarda además una copia en la subcarpeta <b>respaldos</b>. Se conservan las últimas 14.</p>
+  </div>
+  <div class="box"><h3 class="h3">Copia fuera de la computadora</h3>
+    <p class="small muted">Si la computadora se descompone, esta copia te salva. Guárdala en una USB o en una carpeta de red de la empresa. Va cifrada con tu contraseña actual.</p>
+    <p class="small">${lb?`Última copia: <b>${esc(fmtDay(iso(lb)))}</b>`:'<span class="err-line">Aún no has hecho una copia fuera.</span>'}</p>
+    <div><button class="btn primary" data-act="exportCopy">Guardar copia en USB</button></div>
+    <div>${ui.bkMsg||''}</div>
+  </div>
+  <div class="box"><h3 class="h3">Bloqueo</h3>
+    <p class="small muted">Al bloquear, la app olvida tu contraseña y tus datos quedan solo en el archivo cifrado. Para volver a verlos hace falta la contraseña.</p>
+    <div><button class="btn" data-act="lock">Bloquear ahora</button></div>
+    <label class="small" for="autoLock" style="font-weight:700">Bloquear sola si no la uso por:</label>
+    <select class="field" id="autoLock">${[[0,'Nunca'],[5,'5 minutos'],[10,'10 minutos'],[30,'30 minutos']].map(([v,l])=>`<option value="${v}" ${s.autoLock==v?'selected':''}>${l}</option>`).join('')}</select>
+  </div>
+  <div class="box"><h3 class="h3">Cambiar contraseña</h3>
+    <form data-form="chpw" style="display:flex;flex-direction:column;gap:8px">
+      <input class="field" type="password" id="cpOld" placeholder="Contraseña actual" autocomplete="current-password">
+      <input class="field" type="password" id="cpNew" placeholder="Nueva (mínimo 8 caracteres)" autocomplete="new-password">
+      <input class="field" type="password" id="cpNew2" placeholder="Repite la nueva" autocomplete="new-password">
+      <button class="btn">Cambiar contraseña</button>
+    </form>
+    <p class="small muted">Las copias que ya hiciste siguen abriendo con la contraseña de antes.</p>
+    <div>${ui.cpMsg||''}</div>
+  </div>
+  <div class="box"><h3 class="h3">Restaurar una copia</h3>
+    <p class="small muted">Elige un archivo .focodata (de la carpeta respaldos o de tu USB) y escribe la contraseña con la que se hizo. Reemplaza lo que tienes ahora.</p>
+    <input class="field" type="file" id="rsFile" accept=".focodata">
+    <input class="field" type="password" id="rsPw" placeholder="Contraseña de esa copia" autocomplete="off">
+    ${ui.confirmRestore?`<div class="banner follow"><p>Esto reemplaza todo lo actual por la copia. ¿Seguir?</p><div class="row"><button class="btn small danger" data-act="doRestore">Sí, restaurar</button><button class="btn small ghost" data-act="cancelRestore">Cancelar</button></div></div>`:`<div><button class="btn" data-act="askRestore">Restaurar</button></div>`}
+    <div>${ui.rsMsg||''}</div>
+  </div>
+  <div class="box"><h3 class="h3">Buenas prácticas</h3>
+    <p class="small">En Archivo puedes guardar contactos y datos de trabajo: todo va cifrado. Aun así, no guardes contraseñas, datos bancarios ni información personal delicada (CURP, salud, etc.). Revisa que tu empresa permita guardar sus contactos en tu equipo.</p>
+    <p class="small">Si olvidas tu contraseña, nadie puede abrir tus datos, ni sistemas ni Claude. Guárdala en un lugar seguro.</p>
+    <p class="small">No muevas ni renombres la carpeta. Si lo haces, al abrir elige "Usar otra carpeta" y selecciónala de nuevo.</p>
+    ${hasEx()?`<div><button class="btn small" data-act="clearEx">Borrar los ejemplos</button></div>`:''}
+    ${ui.confirmWipe?`<div class="banner follow"><p>Se borran todas tus tareas. Tus contactos, notas y respaldos diarios se quedan. ¿Seguro?</p><div class="row"><button class="btn small danger" data-act="wipe">Sí, vaciar todo</button><button class="btn small ghost" data-act="cancelWipe">Cancelar</button></div></div>`:`<div><button class="btn small ghost danger" data-act="askWipe">Vaciar todos mis pendientes</button></div>`}
+  </div>
+  </div>`;
+}
+/* ---------- Archivo (segundo cerebro) ---------- */
+let arQ = '', arFilter = 'all', arEdit = null, arConfirmDel = null, arOpen = {};
+const fold = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function noteHay(n){ const p = person(n.personId); return fold([n.title,n.body,n.company,n.phone,(n.phone||'').replace(/\D/g,''),n.email,(n.tags||[]).join(' '),p?p.name:''].join(' ')); }
+function matchQ(hay){ const t = fold(arQ).split(/\s+/).filter(Boolean); return t.every(x => hay.includes(x)); }
+function allTags(){ const m = {}; S.notes.forEach(n => (n.tags||[]).forEach(t => m[t] = 1)); return Object.keys(m).sort(); }
+function notesFiltered(){
+  let ns = S.notes.slice();
+  if (arFilter==='contact' || arFilter==='note') ns = ns.filter(n => n.type===arFilter);
+  else if (arFilter.startsWith('p:')) ns = ns.filter(n => n.personId===arFilter.slice(2));
+  else if (arFilter.startsWith('t:')) ns = ns.filter(n => (n.tags||[]).includes(arFilter.slice(2)));
+  if (arQ.trim()) ns = ns.filter(n => matchQ(noteHay(n)));
+  return ns.sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || (b.updatedAt||0)-(a.updatedAt||0));
+}
+function ficha(n){
+  const p = person(n.personId);
+  const pin = `<button class="pinbtn" data-act="arPin" data-id="${n.id}" aria-pressed="${!!n.pinned}" aria-label="Fijar arriba" title="Fijar arriba">${n.pinned?'★':'☆'}</button>`;
+  const del = arConfirmDel===n.id
+    ? `<span class="small">¿Borrar?</span><button class="btn tiny danger" data-act="arDel" data-id="${n.id}">Sí, borrar</button><button class="btn tiny ghost" data-act="arDelNo">No</button>`
+    : `<button class="btn tiny ghost" data-act="arAskDel" data-id="${n.id}">Borrar</button>`;
+  const tags = (n.tags||[]).length ? `<div class="mini-s">${n.tags.map(t => `<button class="tag tagbtn" data-act="arFilter" data-v="t:${esc(t)}">#${esc(t)}</button>`).join('')}</div>` : '';
+  const acts = `<div class="ficha-a"><button class="btn tiny" data-act="arEdit" data-id="${n.id}">Editar</button>${del}</div>`;
+  const style = `style="--pc:${noteVar(n.personId)}"`;
+  if (n.type==='contact'){
+    const line = (k,v) => v ? `<div class="kv"><span class="k">${k}</span><span class="v">${esc(v)}</span><button class="btn tiny" data-act="copy" data-v="${esc(v)}">Copiar</button></div>` : '';
+    return `<article class="ficha" ${style}><div class="ficha-h"><span class="kind">Contacto</span>${pin}</div>
+      <div class="ficha-t">${esc(n.title)}</div>
+      ${n.company?`<div class="ficha-sub">${esc(n.company)}</div>`:''}
+      ${p?`<div class="ficha-sub">Contacto de <b>${esc(p.name)}</b></div>`:''}
+      ${line('Tel.', n.phone)}${line('Correo', n.email)}
+      ${n.body?`<div class="ficha-b">${esc(n.body)}</div>`:''}${tags}${acts}</article>`;
+  }
+  const body = n.body || '', long = body.length > 260;
+  return `<article class="ficha" ${style}><div class="ficha-h"><span class="kind">Nota${p?' · '+esc(p.name):''}</span>${pin}</div>
+    <div class="ficha-t">${esc(n.title)}</div>
+    ${body?`<div class="ficha-b">${esc(long && !arOpen[n.id] ? body.slice(0,260)+'…' : body)}</div>`:''}
+    ${long?`<button class="more" data-act="arOpen" data-id="${n.id}">${arOpen[n.id]?'Ver menos':'Ver todo'}</button>`:''}${tags}${acts}</article>`;
+}
+function arEditor(){
+  if (!arEdit) return '';
+  const n = arEdit.id ? S.notes.find(x => x.id===arEdit.id) : {type:arEdit.type, title:'', body:'', tags:[], personId:null};
+  if (!n) return '';
+  const c = n.type==='contact';
+  const popts = `<option value="">Nadie en especial</option>` + S.people.map(p => `<option value="${p.id}" ${n.personId===p.id?'selected':''}>${esc(p.name)}</option>`).join('');
+  return `<form class="box" data-form="arForm"><h3 class="h3">${arEdit.id?'Editar':'Nuevo'} ${c?'contacto':'nota'}</h3>
+    <div class="grid2" style="grid-template-columns:1fr"><div><label class="small" for="arTitle"><b>${c?'Nombre':'Título'}</b></label>
+    <input class="field" id="arTitle" maxlength="120" value="${esc(n.title)}" placeholder="${c?'Ej: Lic. Andrea Ruiz':'Ej: Datos para reservar la sala grande'}"></div></div>
+    ${c?`<div class="grid2">
+      <div><label class="small" for="arCompany"><b>Empresa o relación</b></label><input class="field" id="arCompany" maxlength="120" value="${esc(n.company||'')}" placeholder="Ej: Socia en Grupo Norte"></div>
+      <div><label class="small" for="arPerson"><b>Contacto de</b></label><select class="field" id="arPerson">${popts}</select></div>
+      <div><label class="small" for="arPhone"><b>Teléfono</b></label><input class="field" id="arPhone" maxlength="40" value="${esc(n.phone||'')}" inputmode="tel"></div>
+      <div><label class="small" for="arEmail"><b>Correo</b></label><input class="field" id="arEmail" maxlength="120" value="${esc(n.email||'')}" inputmode="email"></div></div>`
+    : `<div class="grid2" style="grid-template-columns:1fr"><div><label class="small" for="arPerson"><b>Relacionada con</b></label><select class="field" id="arPerson">${popts}</select></div></div>`}
+    <div class="grid2" style="grid-template-columns:1fr"><div><label class="small" for="arBody"><b>${c?'Notas':'Contenido'}</b></label>
+    <textarea class="field note-area" id="arBody" placeholder="${c?'Ej: Prefiere WhatsApp. Su asistente es Paty.':'Escribe o pega aquí lo que quieras recordar.'}">${esc(n.body||'')}</textarea></div>
+    <div><label class="small" for="arTags"><b>Etiquetas</b> <span class="muted">(separadas por coma)</span></label>
+    <input class="field" id="arTags" maxlength="160" value="${esc((n.tags||[]).join(', '))}" placeholder="Ej: socios, proveedores, viajes"></div></div>
+    <p class="small muted" style="margin:0">No guardes contraseñas, datos bancarios ni información personal delicada.</p>
+    <div class="row"><button class="btn primary">Guardar</button><button class="btn ghost" type="button" data-act="arCancel">Cancelar</button></div></form>`;
+}
+const STLBL = {now:'En Ahora', next:'Siguientes', inbox:'Sin procesar', waiting:'Esperando'};
+function arResults(){
+  const ns = notesFiltered();
+  let h = '';
+  if (arQ.trim()){
+    const ts = S.items.filter(i => i.status!=='done' && matchQ(fold(label(i)+' '+i.text+' '+(i.waitingOn||'')+' '+((person(i.personId)||{}).name||''))));
+    if (ts.length) h += `<div class="list">${ts.slice(0,6).map(i => `<div class="li"><div class="txt"><div class="t">${esc(label(i))}</div><div class="s">${pTag(i.personId)}<span class="tag">Pendiente · ${STLBL[i.status]||''}</span></div></div></div>`).join('')}</div>`;
+  }
+  if (!ns.length) h += `<p class="col-empty">${arQ.trim()||arFilter!=='all' ? 'No encontré nada con eso. Prueba otra palabra o quita el filtro.' : 'Aún no guardas nada. Empieza con un contacto o una nota.'}</p>`;
+  else h += `<div class="fichas">${ns.map(ficha).join('')}</div>`;
+  return h;
+}
+function vArchivo(){
+  const chip = (v,l) => `<button class="chip" data-act="arFilter" data-v="${esc(v)}" aria-pressed="${arFilter===v}">${l}</button>`;
+  return `<section class="section-head"><div><h2 class="h2">Archivo</h2><p class="sub">Tu segundo cerebro: contactos, datos y notas de trabajo en un solo lugar. Todo se guarda cifrado.</p></div>
+    <div class="row"><button class="btn primary" data-act="arNew" data-type="contact">+ Contacto</button><button class="btn" data-act="arNew" data-type="note">+ Nota</button></div></section>
+    ${arEditor()}
+    <div class="searchbar"><input id="arQ" class="search-in" type="search" value="${esc(arQ)}" placeholder="Un nombre, un teléfono, una palabra…" aria-label="Buscar en tu archivo" autocomplete="off"></div>
+    <div class="chips board-chips">${chip('all','Todo')}${chip('contact','Contactos')}${chip('note','Notas')}${S.people.map(p => chip('p:'+p.id, esc(p.name))).join('')}${allTags().map(t => chip('t:'+t, '#'+esc(t))).join('')}</div>
+    <div id="arRes">${arResults()}</div>`;
+}
+
+const VIEWS = {ahora:vAhora, procesar:vProcesar, esperando:vEsperando, personas:vPersonas, archivo:vArchivo, cierre:vCierre, seguridad:vSeguridad};
+function render(){
+  const d = new Date();
+  $('#todayLbl').textContent = d.toLocaleDateString('es-MX',{weekday:'long', day:'numeric', month:'long'});
+  renderTabs();
+  $('#main').innerHTML = VIEWS[view]();
+  tick();
+}
+function go(v){
+  view = VIEWS[v] ? v : 'ahora';
+  if (view!=='archivo') arEdit = null;
+  ui = {};
+  try { if (location.hash !== '#'+view) history.replaceState(null,'','#'+view); } catch(e){}
+  render();
+  window.scrollTo({top:0});
+}
+
+/* ---------- Temporizador ---------- */
+function elapsed(){ const t = S.timer; if (!t) return 0; return t.acc + (t.startedAt ? Date.now()-t.startedAt : 0); }
+function tick(){
+  if (!S) return;
+  const t = S.timer; if (!t) return;
+  const bar = document.getElementById('bar-'+t.id); if (!bar) return;
+  const e = elapsed(), est = t.est*60000;
+  const over = e > est;
+  bar.classList.toggle('over', over);
+  bar.firstElementChild.style.width = Math.min(100, (e/est)*100) + '%';
+  document.getElementById('clk-'+t.id).textContent = clock(e);
+  const m = document.getElementById('msg-'+t.id);
+  if (m) m.textContent = over ? `+${clock(e-est)} extra, está bien` : `quedan ${clock(est-e)}`;
+}
+setInterval(tick, 1000);
+
+/* ---------- Acciones ---------- */
+let toastT;
+function toast(msg){ const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 2600); }
+function celebrate(el){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = el ? el.getBoundingClientRect() : {left:innerWidth/2, top:innerHeight/2, width:0, height:0};
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  const cols = ['var(--n0)','var(--n1)','var(--n2)','var(--n3)','var(--n4)','var(--n5)'];
+  for (let k=0;k<16;k++){
+    const s = document.createElement('span'); s.className = 'confetti';
+    const a = Math.random()*Math.PI*2, d = 50+Math.random()*90;
+    s.style.cssText = `left:${cx}px;top:${cy}px;background:${cols[k%cols.length]};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d-40}px;--r:${Math.random()*540-270}deg`;
+    document.body.appendChild(s); setTimeout(()=>s.remove(), 1150);
+  }
+}
+const item = id => S.items.find(i=>i.id===id);
+function finish(i, el){
+  if (S.timer && S.timer.id === i.id){ i.estimate = S.timer.est; i.actual = Math.max(1, mins(elapsed())); S.timer = null; }
+  i.status = 'done'; i.doneAt = Date.now(); i.tomorrow = false;
+  save(); celebrate(el);
+  const n = doneToday().length;
+  toast(['Listo.','Una menos.','Bien hecho.','Fuera de tu cabeza.','Buen ritmo.'][n%5] + ` Llevas ${n} hoy.`);
+  render();
+}
+function guessPerson(text){
+  const m = /^\s*([^:\-–—]{2,30})\s*[:\-–—]\s*(.+)$/.exec(text);
+  if (m){ const p = S.people.find(p => p.name.toLowerCase() === m[1].trim().toLowerCase()); if (p) return {id:p.id, rest:m[2].trim()}; }
+  return {id:null, rest:null};
+}
+function addPerson(name){
+  name = name.trim(); if (!name) return null;
+  const ex = S.people.find(p=>p.name.toLowerCase()===name.toLowerCase()); if (ex) return ex;
+  const used = S.people.map(p=>p.color);
+  let c = 0; for (let k=0;k<6;k++){ if (!used.includes(k)){ c=k; break; } c = S.people.length%6; }
+  const p = {id:uid(), name, color:c}; S.people.push(p); save(); return p;
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, id = b.dataset.id;
+  const i = id ? item(id) : null;
+  switch(a){
+    case 'tab': go(b.dataset.v); break;
+    case 'lock': lockNow(); break;
+    case 'clearEx':
+      S.items = S.items.filter(x=>!x.ex); S.people = S.people.filter(p=>!p.ex); S.notes = S.notes.filter(n=>!n.ex);
+      if (S.timer && !item(S.timer.id)) S.timer = null;
+      save(); toast('Listo. Ahora es tuyo. Captura tu primer pendiente arriba.'); render(); $('#capIn').focus(); break;
+    case 'start':
+      S.timer = {id, est:+b.dataset.m, startedAt:Date.now(), acc:0}; save(); render(); break;
+    case 'pause':
+      if (!S.timer) break;
+      if (S.timer.startedAt){ S.timer.acc += Date.now()-S.timer.startedAt; S.timer.startedAt = null; }
+      else S.timer.startedAt = Date.now();
+      save(); render(); break;
+    case 'stopTimer': S.timer = null; save(); render(); break;
+    case 'done': if (i) finish(i, b); break;
+    case 'toNext': if (i){ if (S.timer && S.timer.id===id) S.timer=null; i.status='next'; save(); render(); } break;
+    case 'toNow': if (i && byStatus('now').length < MAX_NOW){ i.status='now'; save(); render(); } break;
+    case 'pullNext': { const n = nextSorted()[0]; if (n){ n.status='now'; save(); render(); } break; }
+    case 'moreNext': showAllNext = !showAllNext; render(); break;
+
+    // Procesar
+    case 'pPick': proc.personId = proc.personId===id ? null : id; render(); break;
+    case 'pNew': proc.newP = true; render(); setTimeout(()=>{ const n=$('#npName'); n&&n.focus(); }, 0); break;
+    case 'pDue': proc.due = b.dataset.v || null; render(); break;
+    case 'pWait': proc.waiting = !proc.waiting; render(); break;
+    case 'pFollow': proc.follow = b.dataset.v; render(); break;
+    case 'pTwo': case 'pSave': {
+      const it = item(proc.id); if (!it) break;
+      it.personId = proc.personId==='me' ? null : proc.personId;
+      it.action = (proc.action||'').trim() || it.text;
+      it.due = proc.due; it.blocking = proc.blocking;
+      if (a==='pTwo'){ it.estimate = 2; proc = null; finish(it, b); break; }
+      const to = b.dataset.to;
+      if (to==='now' && byStatus('now').length>=MAX_NOW) break;
+      it.status = to;
+      if (to==='waiting'){ it.followUp = proc.follow; it.waitingOn = (proc.waitingOn||'').trim(); }
+      proc = null; save();
+      toast(to==='next'?'Guardada en Siguientes.':to==='now'?'Lista en Ahora.':'Te aviso cuándo preguntar.');
+      render(); break;
+    }
+    case 'pSkip': {
+      const inbox = byStatus('inbox'); const it = item(proc.id);
+      if (inbox.length>1 && it){ S.items = S.items.filter(x=>x!==it); S.items.push(it); save(); }
+      proc = null; render(); break;
+    }
+    case 'pDel': S.items = S.items.filter(x=>x.id!==proc.id); proc=null; save(); toast('Borrada.'); render(); break;
+
+    // Esperando
+    case 'wDone': if (i){ i.status='done'; i.doneAt=Date.now(); save(); celebrate(b); toast('Cerrado. Una cosa menos en la cabeza.'); render(); } break;
+    case 'wBump': if (i){ i.followUp = addDays(2); save(); toast(`Te recuerdo el ${fmtDay(i.followUp)}.`); render(); } break;
+    case 'wNext': if (i){ i.status='next'; save(); render(); } break;
+
+    // Personas
+    case 'pSel': selPerson = selPerson===id ? null : id; ui.confirmDelP=null; render(); break;
+    case 'askDelP': ui.confirmDelP = id; render(); break;
+    case 'cancelDelP': ui.confirmDelP = null; render(); break;
+    case 'delP': S.people = S.people.filter(p=>p.id!==id); S.items.forEach(x=>{ if (x.personId===id) x.personId=null; }); selPerson=null; ui.confirmDelP=null; save(); render(); break;
+
+    // Cierre
+    case 'star': if (i){
+      const n = S.items.filter(x=>x.tomorrow && x.status!=='done').length;
+      if (!i.tomorrow && n>=3){ toast('Ya elegiste 3. Quita una estrella para cambiarla.'); break; }
+      i.tomorrow = !i.tomorrow; save(); render(); } break;
+    case 'closeDay': S.closedOn = today(); save(); celebrate(b); toast('Día cerrado. Lo que queda está guardado, no en tu cabeza.'); render(); break;
+
+    // Archivo
+    case 'pRef': {
+      const it = item(proc.id); if (!it) break;
+      const now = Date.now();
+      S.notes.push({id:uid(), type:'note', title:((proc.action||'').trim()||it.text).slice(0,120), body:it.text, personId:proc.personId==='me'?null:proc.personId, tags:[], createdAt:now, updatedAt:now});
+      S.items = S.items.filter(x => x.id!==it.id); proc = null; save(); toast('Guardado en Archivo.'); render(); break;
+    }
+    case 'arNew': arEdit = {type:b.dataset.type}; render(); setTimeout(()=>{ const t=$('#arTitle'); t&&t.focus(); },0); break;
+    case 'arEdit': arEdit = {id}; view!=='archivo' ? go('archivo') : render(); window.scrollTo({top:0}); setTimeout(()=>{ const t=$('#arTitle'); t&&t.focus(); },0); break;
+    case 'arCancel': arEdit = null; render(); break;
+    case 'arPin': { const n = S.notes.find(x=>x.id===id); if (n){ n.pinned = !n.pinned; save(); render(); } break; }
+    case 'arAskDel': arConfirmDel = id; render(); break;
+    case 'arDelNo': arConfirmDel = null; render(); break;
+    case 'arDel': S.notes = S.notes.filter(x=>x.id!==id); arConfirmDel = null; if (arEdit && arEdit.id===id) arEdit = null; save(); toast('Borrado del Archivo.'); render(); break;
+    case 'arFilter': { const v = b.dataset.v; arFilter = arFilter===v ? 'all' : v; if (view!=='archivo') go('archivo'); else render(); break; }
+    case 'arOpen': arOpen[id] = !arOpen[id]; render(); break;
+    case 'copy': {
+      const v = b.dataset.v;
+      const ok = () => toast('Copiado: ' + v);
+      const fail = () => { const r = document.createRange(); const el = b.parentElement.querySelector('.v'); if (el){ r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast('Seleccionado. Usa Ctrl+C para copiar.'); };
+      try { navigator.clipboard.writeText(v).then(ok, fail); } catch(e){ fail(); }
+      break;
+    }
+    // Seguridad
+    case 'exportCopy': exportCopy(); break;
+    case 'retrySave': save(); break;
+    case 'askRestore': ui.confirmRestore = true; render(); break;
+    case 'cancelRestore': ui.confirmRestore = false; render(); break;
+    case 'doRestore': restore(); break;
+    case 'askWipe': ui.confirmWipe = true; render(); break;
+    case 'cancelWipe': ui.confirmWipe = false; render(); break;
+    case 'wipe': S.items = []; S.timer = null; save(); go('ahora'); toast('Pendientes borrados. Tus contactos y notas siguen ahí.'); break;
+  }
+});
+
+document.addEventListener('input', e => {
+  if (e.target.id==='arQ'){ arQ = e.target.value; const r = $('#arRes'); if (r) r.innerHTML = arResults(); return; }
+  if (!proc) return;
+  if (e.target.id==='pAction') proc.action = e.target.value;
+  if (e.target.id==='pWaitOn') proc.waitingOn = e.target.value;
+});
+document.addEventListener('change', e => {
+  if (e.target.id==='pBlock' && proc) proc.blocking = e.target.checked;
+  if (e.target.id==='autoLock'){ S.settings.autoLock = +e.target.value; save(); }
+});
+
+/* Captura */
+const SENS = /\b\d{8,}\b|contrase|password|passw|\bclave\b|\bnip\b|\bcvv\b|\bcurp\b|\brfc\b|tarjeta\s*\d/i;
+function capHint(){
+  if (!S) return;
+  const v = $('#capIn').value, g = guessPerson(v);
+  let h = '';
+  if (SENS.test(v)) h += `<span class="sens">Parece un dato sensible. Mejor no lo guardes aquí.</span>`;
+  if (g.id) h += `<span>Para: ${pTag(g.id)}</span>`;
+  if (!h) h = `<span>Escribe y presiona <kbd>Enter</kbd>. Decides qué es después, en Procesar.</span><span><kbd>/</kbd> capturar</span><span><kbd>Ctrl</kbd>+<kbd>K</kbd> buscar en tu Archivo</span>`;
+  $('#capHint').innerHTML = h;
+}
+$('#capIn').addEventListener('input', capHint);
+$('#capForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('#capIn').value.trim(); if (!v || !S) return;
+  const g = guessPerson(v);
+  S.items.push({id:uid(), text:v, action:'', personId:g.id, status:'inbox', due:null, blocking:false, createdAt:Date.now()});
+  save(); $('#capIn').value=''; capHint();
+  toast('Capturado. Ya no tienes que recordarlo.');
+  renderTabs(); if (view==='ahora' || view==='procesar') render();
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k' && S){ e.preventDefault(); if (view!=='archivo') go('archivo'); setTimeout(()=>{ const q=$('#arQ'); q&&q.focus(); },0); return; }
+  if (e.key==='/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && $('#lock').hidden){ e.preventDefault(); $('#capIn').focus(); }
+});
+
+/* Formularios */
+document.addEventListener('submit', async e => {
+  const f = e.target.dataset && e.target.dataset.form; if (!f) return;
+  e.preventDefault();
+  if (f==='newPerson'){ const p = addPerson($('#npName').value); if (p){ proc.personId = p.id; proc.newP=false; render(); } }
+  if (f==='addPerson'){ const p = addPerson($('#addPName').value); if (p){ selPerson = p.id; render(); toast(`${p.name} agregada.`); } }
+  if (f==='chpw') changePw();
+  if (f==='arForm'){
+    const title = $('#arTitle').value.trim();
+    if (!title){ toast('Ponle un nombre o título.'); $('#arTitle').focus(); return; }
+    const now = Date.now();
+    let n = arEdit.id ? S.notes.find(x=>x.id===arEdit.id) : null;
+    if (!n){ n = {id:uid(), type:arEdit.type, createdAt:now}; S.notes.push(n); }
+    n.title = title; n.body = $('#arBody').value.trim(); n.personId = $('#arPerson').value || null;
+    n.tags = $('#arTags').value.split(',').map(t=>t.trim().replace(/^#/,'').toLowerCase()).filter(Boolean).filter((t,i,a)=>a.indexOf(t)===i);
+    if (n.type==='contact'){ n.company = $('#arCompany').value.trim(); n.phone = $('#arPhone').value.trim(); n.email = $('#arEmail').value.trim(); }
+    n.updatedAt = now; delete n.ex;
+    arEdit = null; save(); toast('Guardado en Archivo.'); render();
+  }
+});
+
+/* ---------- Cifrado ---------- */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64 = u8 => { let s=''; const a=new Uint8Array(u8); for (let k=0;k<a.length;k+=0x8000) s += String.fromCharCode.apply(null, a.subarray(k,k+0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function keyFrom(pw, salt, iter){
+  const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:iter||ITER, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function encryptWith(key, salt, data){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify(data)));
+  return JSON.stringify({app:'foco-diario', v:2, kdf:'PBKDF2-SHA256', iter:ITER, alg:'AES-GCM-256', salt:b64(salt), iv:b64(iv), data:b64(ct), savedAt:new Date().toISOString()});
+}
+async function decryptText(txt, pw){
+  const o = JSON.parse(txt);
+  if (o.app !== 'foco-diario') throw new Error('format');
+  const salt = unb64(o.salt);
+  const key = await keyFrom(pw, salt, o.iter);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(o.iv)}, key, unb64(o.data));
+  return {data:JSON.parse(dec.decode(pt)), key, salt, iterOk: (o.iter||ITER)===ITER};
+}
+
+async function exportCopy(){
+  const msg = m => { ui.bkMsg = m; render(); };
+  if (!window.showSaveFilePicker) return msg('<p class="err-line small">Este navegador no permite elegir dónde guardar. Copia el archivo datos.focodata de tu carpeta a la USB.</p>');
+  try {
+    const fh = await window.showSaveFilePicker({suggestedName:`foco-diario-copia-${today()}.focodata`, types:[{description:'Copia de Foco Diario', accept:{'application/octet-stream':['.focodata']}}]});
+    S.settings.lastBackup = Date.now();
+    const txt = await encryptWith(KEYC, SALT, S);
+    const w = await fh.createWritable(); await w.write(txt); await w.close();
+    save(); toast('Copia guardada.');
+    msg(`<p class="ok-line small">Copia guardada como ${esc(fh.name)}.</p>`);
+  } catch(e){
+    if (e && e.name === 'AbortError') return;
+    msg('<p class="err-line small">No se pudo guardar ahí. Prueba otra ubicación, por ejemplo tu USB o Escritorio.</p>');
+  }
+}
+async function restore(){
+  const out = m => { ui.rsMsg = m; ui.confirmRestore = false; render(); };
+  const pw = $('#rsPw').value; const file = $('#rsFile').files[0];
+  if (!file) return out('<p class="err-line small">Elige el archivo de la copia.</p>');
+  if (!pw) return out('<p class="err-line small">Escribe la contraseña de esa copia.</p>');
+  try {
+    const r = await decryptText(await file.text(), pw);
+    S = r.data; normalize(); S.timer = null; S.lastOpen = today();
+    save(); ui = {}; ui.rsMsg = '<p class="ok-line small">Copia restaurada. Se guarda con tu contraseña actual.</p>'; render(); toast('Todo de vuelta.');
+  } catch(err){
+    out('<p class="err-line small">No se pudo abrir. Revisa que sea un archivo .focodata y que la contraseña sea la de esa copia.</p>');
+  }
+}
+async function changePw(){
+  const out = m => { ui.cpMsg = m; render(); };
+  const o = $('#cpOld').value, n = $('#cpNew').value, n2 = $('#cpNew2').value;
+  if (n.length < 8) return out('<p class="err-line small">La nueva contraseña necesita al menos 8 caracteres.</p>');
+  if (n !== n2) return out('<p class="err-line small">Las contraseñas nuevas no coinciden.</p>');
+  try {
+    if (saveT){ clearTimeout(saveT); saveT = null; }
+    await flush();
+    const fh = await dirH.getFileHandle(DATA);
+    await decryptText(await (await fh.getFile()).text(), o);
+  } catch(e){ return out('<p class="err-line small">La contraseña actual no es correcta.</p>'); }
+  SALT = crypto.getRandomValues(new Uint8Array(16));
+  KEYC = await keyFrom(n, SALT);
+  bkDay = null;
+  await flush();
+  ui.cpMsg = '<p class="ok-line small">Contraseña cambiada.</p>'; render(); toast('Contraseña cambiada.');
+}
+
+/* ---------- Carpeta recordada (solo el acceso, nunca los datos) ---------- */
+function idb(){ return new Promise((res,rej)=>{ const r = indexedDB.open('foco-diario',1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbGet(k){ try { const db = await idb(); return await new Promise(res => { const q = db.transaction('h').objectStore('h').get(k); q.onsuccess = () => res(q.result||null); q.onerror = () => res(null); }); } catch(e){ return null; } }
+async function idbSet(k,v){ try { const db = await idb(); db.transaction('h','readwrite').objectStore('h').put(v,k); } catch(e){} }
+
+/* ---------- Pantalla de entrada y bloqueo ---------- */
+let lockMode = 'pick';
+function showLock(mode, msg){
+  lockMode = mode;
+  $('#app').hidden = true; $('#lock').hidden = false;
+  const name = dirH ? esc(dirH.name) : '';
+  const err = msg ? `<p class="lk-err">${msg}</p>` : '';
+  let h = '';
+  if (mode==='unsupported'){
+    h = `<p>Para guardar en tu carpeta, esta app necesita <b>Microsoft Edge</b> o <b>Google Chrome</b>.</p>
+      <p class="lk-note">Cierra esta ventana y en la carpeta haz clic derecho sobre el archivo → <b>Abrir con</b> → <b>Microsoft Edge</b>.</p>`;
+  } else if (mode==='pick'){
+    h = `<p class="muted">Tus pendientes se guardan cifrados en una carpeta de tu computadora.</p>
+      <ol class="lk-steps"><li>Toca <b>Elegir carpeta</b>.</li><li>Ve a <b>Documentos</b>, toca <b>Nueva carpeta</b>, llámala <b>Foco Diario</b> y selecciónala. Si ya la tienes, solo selecciónala.</li><li>Si Edge pregunta, elige <b>Permitir</b> o <b>Editar archivos</b>.</li></ol>
+      ${err}<button class="btn primary big" data-lk="pick" style="justify-content:center">Elegir carpeta</button>`;
+  } else if (mode==='unlock'){
+    h = `<p class="muted">Carpeta: <b>${name}</b></p>
+      <form id="lkForm" data-mode="unlock"><input class="field" type="password" id="lkPw" placeholder="Tu contraseña" autocomplete="current-password" aria-label="Contraseña">
+      ${err}<button class="btn primary big" style="justify-content:center">Desbloquear</button></form>
+      <p class="lk-note">Si Edge pregunta por la carpeta, elige <b>Permitir</b>.</p>
+      <button class="btn ghost small" data-lk="pick">Usar otra carpeta</button>`;
+  } else if (mode==='create'){
+    h = `<p>Vamos a crear tu archivo de pendientes en <b>${name}</b>. Elige una contraseña: con ella se cifra todo.</p>
+      <form id="lkForm" data-mode="create">
+        <input class="field" type="password" id="lkPw" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password" aria-label="Contraseña nueva">
+        <input class="field" type="password" id="lkPw2" placeholder="Repite la contraseña" autocomplete="new-password" aria-label="Repite la contraseña">
+        <label class="toggle small"><input type="checkbox" id="lkAck"> Entiendo que si olvido la contraseña, nadie puede recuperar mis datos.</label>
+        ${err}<button class="btn primary big" style="justify-content:center">Crear y empezar</button>
+      </form>
+      <button class="btn ghost small" data-lk="pick">Usar otra carpeta</button>`;
+  }
+  $('#lockBody').innerHTML = h;
+  const pw = document.getElementById('lkPw'); if (pw) setTimeout(()=>pw.focus(), 30);
+}
+async function ensurePerm(){
+  const o = {mode:'readwrite'};
+  if ((await dirH.queryPermission(o)) === 'granted') return true;
+  return (await dirH.requestPermission(o)) === 'granted';
+}
+async function pickFolder(){
+  try {
+    dirH = await window.showDirectoryPicker({id:'foco-diario', mode:'readwrite', startIn:'documents'});
+  } catch(e){
+    if (e && e.name==='AbortError') return;
+    return showLock('pick', 'Windows no deja usar esa carpeta directamente. Crea una carpeta nueva dentro de Documentos (por ejemplo, Foco Diario) y elígela.');
+  }
+  await idbSet('dir', dirH);
+  try { await dirH.getFileHandle(DATA); showLock('unlock'); } catch(e){ showLock('create'); }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-lk]'); if (b && b.dataset.lk==='pick') pickFolder(); });
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'lkForm') return;
+  e.preventDefault();
+  const btn = e.target.querySelector('button'); const pw = $('#lkPw').value;
+  if (e.target.dataset.mode === 'create'){
+    if (pw.length < 8) return showLock('create', 'La contraseña necesita al menos 8 caracteres.');
+    if (pw !== $('#lkPw2').value) return showLock('create', 'Las contraseñas no coinciden.');
+    if (!$('#lkAck').checked) return showLock('create', 'Marca la casilla para confirmar que lo entiendes.');
+    btn.disabled = true; btn.textContent = 'Creando…';
+    try {
+      if (!(await ensurePerm())) return showLock('create', 'Edge necesita permiso para guardar en la carpeta. Intenta de nuevo y elige Permitir.');
+      SALT = crypto.getRandomValues(new Uint8Array(16));
+      KEYC = await keyFrom(pw, SALT);
+      startSession(examples(), true);
+    } catch(err){ showLock('create', 'No se pudo crear el archivo. Elige otra carpeta.'); }
+    return;
+  }
+  if (!pw) return showLock('unlock', 'Escribe tu contraseña.');
+  btn.disabled = true; btn.textContent = 'Abriendo…';
+  try {
+    if (!(await ensurePerm())) return showLock('unlock', 'Edge necesita permiso para abrir la carpeta. Intenta de nuevo y elige Permitir.');
+  } catch(err){ return showLock('pick', 'No encuentro la carpeta. ¿La moviste o renombraste? Elígela de nuevo.'); }
+  let txt;
+  try { txt = await (await (await dirH.getFileHandle(DATA)).getFile()).text(); }
+  catch(err){ return showLock('create', 'Esta carpeta no tiene datos todavía. Crea tu archivo.'); }
+  try {
+    const r = await decryptText(txt, pw);
+    KEYC = r.key; SALT = r.salt;
+    startSession(r.data, !r.iterOk);
+  } catch(err){ showLock('unlock', 'Contraseña incorrecta. Intenta de nuevo.'); }
+});
+
+let lastAct = Date.now();
+['pointerdown','keydown'].forEach(ev => document.addEventListener(ev, () => lastAct = Date.now(), true));
+function startSession(data, forceSave){
+  S = data; normalize();
+  const changed = morning();
+  $('#lock').hidden = true; $('#app').hidden = false; $('#lockBody').innerHTML = '';
+  lastAct = Date.now();
+  capHint();
+  const h = location.hash.slice(1);
+  go(VIEWS[h] ? h : 'ahora');
+  if (forceSave || changed) { flush(); } else { setSave('ok'); }
+}
+async function lockNow(){
+  if (!S) return;
+  if (saveT){ clearTimeout(saveT); saveT = null; flush(); }
+  await writing;
+  S = null; KEYC = null; SALT = null; proc = null; ui = {};
+  $('#main').innerHTML = ''; $('#capIn').value = '';
+  showLock('unlock');
+}
+setInterval(() => {
+  const m = S && S.settings.autoLock;
+  if (S && m && Date.now()-lastAct > m*60000) lockNow();
+}, 15000);
+
+/* ---------- Inicio ---------- */
+window.addEventListener('hashchange', () => { if (!S) return; const h = location.hash.slice(1); if (h && h!==view && VIEWS[h]) go(h); });
+(async () => {
+  if (!window.showDirectoryPicker || !window.crypto || !crypto.subtle) return showLock('unsupported');
+  dirH = await idbGet('dir');
+  showLock(dirH ? 'unlock' : 'pick');
+})();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+FOCO DIARIO - Cómo empezar
+==========================
+
+1. Guarda el archivo "Foco Diario.html" donde quieras tenerlo
+   (por ejemplo, en el Escritorio o en Documentos).
+2. Clic derecho sobre el archivo > Abrir con > Microsoft Edge
+   (también funciona con Google Chrome).
+3. Toca "Elegir carpeta". En la ventana que se abre:
+   ve a Documentos > toca "Nueva carpeta" > llámala Foco Diario
+   > selecciónala. Si Edge pregunta, elige "Permitir" / "Editar archivos".
+4. Elige tu contraseña. Anótala en un lugar seguro: si la olvidas,
+   nadie puede recuperar tus datos.
+
+Listo. Las siguientes veces solo abres el archivo y escribes tu contraseña.
+
+TIP: crea un acceso directo en el Escritorio o arrastra el archivo a
+la barra de favoritos de Edge para abrirla rápido.
+
+QUÉ SE GUARDA EN TU CARPETA
+- datos.focodata ... tus pendientes, contactos y notas, CIFRADOS.
+                     No lo borres, no lo edites y no lo compartas.
+- respaldos\ ....... una copia automática por día (las últimas 14).
+
+SEGURIDAD
+- Nada se envía a internet. Todo se queda en tu computadora.
+- Borrar el historial o actualizar Edge NO borra tus datos.
+- La app se bloquea sola si no la usas (configurable en Seguridad).
+- Cada semana, usa "Guardar copia en USB" en la pestaña Seguridad.
+- No muevas ni renombres la carpeta de datos. Si lo haces, al abrir
+  elige "Usar otra carpeta" y selecciónala de nuevo.
+- No guardes contraseñas, datos bancarios ni información personal
+  delicada.
+
+ACTUALIZAR LA APP
+Si te mandan una versión nueva de "Foco Diario.html", solo reemplaza
+el archivo viejo. Tus datos no se tocan.

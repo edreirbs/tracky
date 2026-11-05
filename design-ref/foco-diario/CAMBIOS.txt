@@ -1,0 +1,10 @@
+FOCO DIARIO - Historial de versiones
+
+1.0 (noviembre 2026)
+- Captura rápida, Procesar (GTD), Tablero con máximo 3 en Ahora.
+- Esperando de… con recordatorios de seguimiento.
+- Personas con colores, Cerrar el día, temporizador y estimado contra real.
+- Archivo: contactos, notas, etiquetas y buscador (Ctrl+K).
+- Datos cifrados (AES-256) en una carpeta local, respaldo diario automático,
+  copia a USB, bloqueo por inactividad y cambio de contraseña.
+- Diseño: pizarra ejecutiva con post-its.
