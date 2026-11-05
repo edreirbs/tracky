@@ -11,7 +11,8 @@ cambios marcados con **(nuevo)** o **(cambia)**.
 
 ## II. Seguridad por diseño
 1. **Cero secretos en el cliente.** La PWA es pública. Solo lleva la URL de Supabase y la *publishable key*.
-   La `service_role` y `ANTHROPIC_API_KEY` viven como variables **secretas** de Netlify. **(cambia)**
+   El único secreto es `ANTHROPIC_API_KEY`, variable **secreta** de Netlify. Tracky **no usa
+   `service_role`**: todo acceso a datos, incluso en segundo plano, va con el JWT de la persona (ADR-0010). **(cambia)**
 2. **RLS en todas las tablas** con `user_id = auth.uid()`. Ninguna tabla queda expuesta sin política. **(nuevo)**
 3. **Autenticación obligatoria** (Supabase Auth) en todo salvo `GET /health`; lista de correos permitidos por instancia.
 4. **Entradas no confiables:** transcripciones, notas y textos de tareas pueden traer instrucciones maliciosas.

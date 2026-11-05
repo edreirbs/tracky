@@ -55,7 +55,6 @@ export async function loadEnv(siteUrl: string): Promise<Env> {
     CLAUDE_FAST_MODEL: get("CLAUDE_FAST_MODEL") || DEFAULTS.CLAUDE_FAST_MODEL,
     CLAUDE_EFFORT: get("CLAUDE_EFFORT") || DEFAULTS.CLAUDE_EFFORT,
     ANTHROPIC_API_KEY: get("ANTHROPIC_API_KEY"),
-    SUPABASE_SERVICE_ROLE_KEY: get("SUPABASE_SERVICE_ROLE_KEY"),
     INTERNAL_KEY: await internalKey(),
     GIT_SHA: get("COMMIT_REF").slice(0, 7) || undefined,
   };
@@ -68,7 +67,6 @@ export function internalSecret(env: Env): Promise<string> {
 
 export function makeDeps(env: Env, origin: string): Deps {
   return {
-    service: new SupabaseRest(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, env.SUPABASE_SERVICE_ROLE_KEY),
     asUser: (token) => new SupabaseRest(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, token),
     anthropic: new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 2 }),
     enqueue: async (jobRef) => {

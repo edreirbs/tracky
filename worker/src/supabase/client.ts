@@ -1,5 +1,5 @@
 // Cliente mínimo de Supabase (PostgREST + Auth) sobre fetch: fácil de simular en pruebas.
-// Con el JWT del usuario, RLS aplica; con la service_role (solo en el servidor), no.
+// Siempre con el JWT del usuario: RLS aplica en todo (Tracky no usa service_role).
 
 export class SupabaseError extends Error {
   constructor(

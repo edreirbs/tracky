@@ -15,9 +15,8 @@ export interface Env {
   /** Modelo rápido para las sugerencias del cargador de tareas. */
   CLAUDE_FAST_MODEL: string;
   CLAUDE_EFFORT: string;
-  // Secretos (variables secretas de Netlify, alcance Functions; ADR-0004)
+  // Único secreto (variable secreta de Netlify, alcance Functions; ADR-0004). Sin service_role.
   ANTHROPIC_API_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
   /** Llave para firmar llamadas internas a la función en segundo plano (se genera sola). */
   INTERNAL_KEY: string;
   GIT_SHA?: string;

@@ -64,7 +64,7 @@ describe("/health", () => {
     const { call } = setup();
     const body = (await (await call("/health", {}, null)).json()) as Record<string, unknown>;
     expect(body.app).toBe("tracky");
-    expect(body.configured).toEqual({ supabase: true, serviceRole: true, anthropic: true });
+    expect(body.configured).toEqual({ supabase: true, anthropic: true });
     expect(JSON.stringify(body)).not.toContain("sb_publishable_x");
   });
   it("?check=claude verifica la llave", async () => {
@@ -84,7 +84,7 @@ describe("auth", () => {
 
 describe("notas en Supabase (spec 001)", () => {
   it("resume en segundo plano y guarda la nota con user_id y etiqueta del catálogo", async () => {
-    const { call, drain, db, requests } = setup([claudeMessage(validOutput)]);
+    const { call, drain, db, requests, env } = setup([claudeMessage(validOutput)]);
     const res = await call("/v1/notes", { method: "POST", body: JSON.stringify(noteBody()), headers: { "idempotency-key": MEETING } });
     expect(res.status).toBe(202);
     await drain();
@@ -94,14 +94,16 @@ describe("notas en Supabase (spec 001)", () => {
     expect(note.tag_id).toBe("t-proy");
     expect(note.status).toBe("saved");
     expect(note.transcript_text).toContain("revisemos los proyectores");
-    // El resumen se escribe con service_role pero siempre filtrando por user_id.
-    expect(db.calls.filter((c) => c.who === "service" && c.op === "select").every((c) => c.query?.includes(`user_id=eq.${USER}`))).toBe(true);
+    // Sin service_role: el trabajo en segundo plano usa el token de la persona (RLS).
+    expect(db.calls.every((c) => c.who === USER)).toBe(true);
     // La transcripción va al mensaje del usuario, no al system (caché + inyección).
     expect(JSON.stringify(requests[0]!.system)).not.toContain("Ignora tus instrucciones");
 
     const status = (await (await call(`/v1/notes/${MEETING}`)).json()) as { status: string; event: { result: { noteId: string; tag: string } } };
     expect(status.status).toBe("done");
     expect(status.event.result.tag).toBe("Proyecto Aula");
+    // El token y la transcripción no se quedan guardados en el trabajo.
+    expect([...(env.STATE as unknown as { store: Map<string, string> }).store.values()].join()).not.toContain(TOKEN);
   });
 
   it("es idempotente: reenviar la misma junta no duplica la nota", async () => {

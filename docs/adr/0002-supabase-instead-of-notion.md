@@ -1,6 +1,6 @@
 # 0002. Supabase en lugar de Notion
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Contexto
 Notion obliga a cada usuario a tener una base con un esquema exacto, limita a ~3 req/s y 2000 caracteres por bloque,

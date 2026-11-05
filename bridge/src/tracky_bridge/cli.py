@@ -83,7 +83,7 @@ def _check_system_audio(setting: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tracky-bridge", description="Puente local entre la app y Whisper.")
-    parser.add_argument("command", nargs="?", default="serve", choices=["serve", "pair", "unpair", "doctor", "install-autostart", "check-system-audio", "set-origin"])
+    parser.add_argument("command", nargs="?", default="serve", choices=["serve", "pair", "unpair", "doctor", "install-autostart", "check-system-audio", "set-origin", "warmup"])
     parser.add_argument("value", nargs="?", help="Para set-origin: https://tu-sitio.netlify.app")
     parser.add_argument("--dev", action="store_true", help="Permite el origen http://localhost:5173")
     parser.add_argument("--port", type=int)
@@ -121,6 +121,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Orígenes permitidos: {', '.join(sorted(cfg.origins())) or 'ninguno — corre tracky-bridge set-origin <url>'}")
         helper = find_helper()
         print(f"Audio del sistema (tracky-audiotap): {helper or 'no instalado — corre bridge/macos/build-audiotap.sh'}")
+        return 0
+    if args.command == "warmup":
+        # Descarga y carga el modelo una vez (para que la primera junta no espere la descarga).
+        engine = create_engine(cfg)
+        print(f"Descargando/cargando {engine.name} · {engine.model}…", flush=True)
+        engine.load()
+        print("✓ Modelo listo.")
         return 0
     if args.command == "install-autostart":
         return install_autostart()

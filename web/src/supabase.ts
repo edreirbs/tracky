@@ -12,6 +12,16 @@ export async function accessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
+/** Token con al menos 20 min de vida (el resumen en segundo plano puede tardar hasta 15). */
+export async function freshAccessToken(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  const s = data.session;
+  if (!s) return null;
+  if ((s.expires_at ?? 0) * 1000 - Date.now() > 20 * 60_000) return s.access_token;
+  const { data: r } = await supabase.auth.refreshSession();
+  return r.session?.access_token ?? s.access_token;
+}
+
 export async function sendMagicLink(email: string): Promise<string | null> {
   const { error } = await supabase.auth.signInWithOtp({
     email: email.trim().toLowerCase(),

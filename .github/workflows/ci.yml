@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: web + worker + shared
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm gen
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test # incluye @tracky/db: migraciones, RLS y economía en PGlite
+      - name: Build web (verifica CSP y bundle)
+        run: pnpm --filter @tracky/web exec vite build
+      - name: Bundle de las funciones de Netlify
+        run: pnpm --filter @tracky/worker bundle
+
+  bridge:
+    name: puente Whisper (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: bridge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run pytest -q
+
+  audiotap:
+    name: captura nativa macOS (Swift)
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar tracky-audiotap
+        run: bridge/macos/build-audiotap.sh "$RUNNER_TEMP/bin"
+      - name: Verificar Info.plist incrustado y firma
+        run: |
+          otool -s __TEXT __info_plist "$RUNNER_TEMP/bin/tracky-audiotap" | grep -q .
+          codesign -dv "$RUNNER_TEMP/bin/tracky-audiotap" 2>&1 | grep -q "Identifier=app.tracky.tracky-audiotap"
+
+  secrets:
+    name: escaneo de secretos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read # gitleaks-action lista los commits del PR
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

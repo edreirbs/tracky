@@ -32,7 +32,6 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
     CLAUDE_FAST_MODEL: "claude-haiku-5-5",
     CLAUDE_EFFORT: "medium",
     ANTHROPIC_API_KEY: "test",
-    SUPABASE_SERVICE_ROLE_KEY: "service",
     INTERNAL_KEY: "internal",
     ...overrides,
   };
@@ -157,7 +156,6 @@ export const validOutput = {
 
 export function makeDeps(db: FakeDb, anthropic: Anthropic, enqueued: string[] = []): Deps {
   return {
-    service: db.client("service"),
     asUser: (token) => db.client(token === TOKEN ? USER : OTHER),
     anthropic,
     enqueue: async (ref) => {

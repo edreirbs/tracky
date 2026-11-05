@@ -1,6 +1,6 @@
 # 0008. Libro mayor de monedas en SQL
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Opciones
 1. Columna `balance` actualizada desde el cliente → manipulable. ❌

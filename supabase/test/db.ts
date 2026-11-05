@@ -28,7 +28,7 @@ export type Db = PGlite & {
 };
 
 export async function freshDb(): Promise<Db> {
-  const pg = (await PGlite.create()) as Db;
+  const pg = (await PGlite.create()) as unknown as Db;
   await pg.exec(AUTH_STUB);
   for (const f of readdirSync(MIGRATIONS).filter((x) => x.endsWith(".sql")).sort()) {
     await pg.exec(readFileSync(join(MIGRATIONS, f), "utf8"));

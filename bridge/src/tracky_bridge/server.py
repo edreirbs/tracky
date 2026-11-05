@@ -20,7 +20,7 @@ from .security import Pairing, TokenStore, host_allowed, origin_allowed
 from .system_audio import AudioSource
 
 HEADER = struct.Struct("<IBB2xQ")  # seq u32 | canal u8 | eco u8 (0–255) | 2 reservados | startMs u64
-ECHO_DROP = 0.55  # con huella: descartar del micrófono lo que no es Edrei y es eco de las bocinas
+ECHO_DROP = 0.55  # con huella: descartar del micrófono lo que no es la persona usuaria y es eco de las bocinas
 ECHO_DROP_NO_VOICEPRINT = 0.75  # sin huella: solo eco muy claro
 MAX_ENROLL_S = 90
 MAX_CHUNK_S = 30
@@ -215,7 +215,7 @@ async def transcribe_ws(request: web.Request) -> web.StreamResponse:
                         speakers = await loop.run_in_executor(None, label_all)
                 pairs = list(zip(kept, speakers))
                 if online_mic:
-                    # Eco de las bocinas en el micrófono: fuera, salvo que sea la voz de Edrei (ADR-0011).
+                    # Eco de las bocinas en el micrófono: fuera, salvo que sea la voz de la persona usuaria (ADR-0011).
                     if has_me:
                         pairs = [p for p in pairs if not (echo >= ECHO_DROP and p[1] != SELF)]
                     elif echo >= ECHO_DROP_NO_VOICEPRINT:
@@ -285,7 +285,7 @@ def _bearer(request: web.Request) -> str | None:
 
 
 async def voice_enroll(request: web.Request) -> web.Response:
-    """Registra la huella de voz de Edrei a partir de PCM16 LE 16 kHz mono (20–90 s leyendo un texto).
+    """Registra la huella de voz de la persona usuaria a partir de PCM16 LE 16 kHz mono (20–90 s leyendo un texto).
 
     El audio solo se usa en memoria para calcular la huella (256 números) y se descarta.
     """

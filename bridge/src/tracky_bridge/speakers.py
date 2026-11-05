@@ -81,8 +81,8 @@ class FakeEmbedder:
         return vec
 
 
-SELF = 0  # identificador de "Yo" (Edrei) cuando hay huella de voz registrada
-SELF_THRESHOLD = 0.45  # similitud mínima con la huella para decir "es Edrei"
+SELF = 0  # identificador de "Yo" (la persona usuaria) cuando hay huella de voz registrada
+SELF_THRESHOLD = 0.45  # similitud mínima con la huella para decir "es la persona usuaria"
 ENROLL_WINDOW_S = 3.0
 ENROLL_MIN_WINDOWS = 5
 
@@ -97,7 +97,7 @@ class _Voice:
 class SpeakerTracker:
     """Agrupación en línea de las voces de una junta (compartida entre canales).
 
-    Si hay huella de voz de Edrei, cualquier segmento que se le parezca es `SELF` (0); las demás voces
+    Si hay huella de voz de la persona usuaria, cualquier segmento que se le parezca es `SELF` (0); las demás voces
     se numeran 1, 2, … La huella no se modifica durante la junta.
     """
 
@@ -129,7 +129,7 @@ class SpeakerTracker:
 
 
 class VoiceprintStore:
-    """Huella de voz de Edrei (256 números, no audio) en un archivo 0600 dentro de la configuración."""
+    """Huella de voz de la persona usuaria (256 números, no audio) en un archivo 0600 dentro de la configuración."""
 
     def __init__(self, path: Path) -> None:
         self.path = path

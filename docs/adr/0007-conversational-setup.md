@@ -1,6 +1,6 @@
 # 0007. Configuración por conversación en Claude Code Desktop
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Contexto
 Req. 6, 7 y 11: la configuración debe hacerla Claude en una conversación de **Claude Code Desktop**, con los

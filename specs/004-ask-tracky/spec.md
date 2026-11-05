@@ -15,7 +15,7 @@ Ejemplos: "¿Qué quedó pendiente de la junta con Ana?", "¿Qué hago ahora si 
 ## 2. Requisitos funcionales
 | ID | Requisito |
 |---|---|
-| FR-301 | `POST /v1/ask` (Netlify Function, streaming SSE) con el JWT del usuario; historial por hilo en `assistant_threads`. |
+| FR-301 | `POST /v1/ask` (Netlify Function) con el JWT del usuario; responde JSON completo (respuesta, citas, propuestas) y la UI muestra "buscando…"; *streaming* queda para v1.1. Historial por hilo en `assistant_threads`. |
 | FR-302 | Herramientas de lectura: `search_notes(query, tag?, from?, to?)`, `get_note(id)`, `search_archive(query)` (contactos y notas sueltas), `list_tasks(filter)`, `coin_summary(range)`. Ejecutadas con el JWT del usuario (RLS). |
 | FR-303 | Herramientas de escritura **propuestas**: `propose_tasks`, `propose_reschedule`. La UI muestra una tarjeta "¿Lo hago?" y solo ejecuta tras confirmación. |
 | FR-304 | Respuestas con **citas** clicables a notas y tareas usadas. |

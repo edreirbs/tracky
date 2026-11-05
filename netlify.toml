@@ -1,0 +1,23 @@
+# Netlify: la PWA (web/dist) y la API (netlify/functions) en el mismo dominio.
+[build]
+  command = "pnpm gen && pnpm --filter @tracky/worker build:server && pnpm --filter @tracky/web build"
+  publish = "web/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_BASE_PATH = "/"
+  VITE_BRIDGE_URL = "http://127.0.0.1:47831"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Encabezados de seguridad para la app estática (las funciones ponen los suyos en código).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "microphone=(self), display-capture=(self), camera=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

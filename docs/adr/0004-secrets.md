@@ -1,6 +1,6 @@
 # 0004. Dónde viven los secretos
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Contexto
 Req. 4: la llave de Claude debe configurarse "desde GitHub o Supabase o donde sea seguro".
@@ -11,10 +11,11 @@ Req. 4: la llave de Claude debe configurarse "desde GitHub o Supabase o donde se
 3. **Variable de entorno secreta en Netlify** (marcada *secret*, solo en *Functions*, oculta en la UI). ✅
 
 ## Decisión
-Opción 3 para `ANTHROPIC_API_KEY` y `SUPABASE_SERVICE_ROLE_KEY`. La PWA solo recibe `VITE_SUPABASE_URL` y
-`VITE_SUPABASE_PUBLISHABLE_KEY`. **La llave de Claude nunca pasa por el chat**: la skill de setup da el enlace a
-*Site configuration → Environment variables*, el usuario la pega y Claude verifica con `GET /health` → `claude: "ok"`.
-La `service_role` sí la puede poner Claude con el conector (la obtiene de Supabase y la escribe en Netlify sin mostrarla).
+Opción 3 para `ANTHROPIC_API_KEY`, **el único secreto de Tracky** (no hay `service_role`: ADR-0010). La PWA y
+las funciones solo reciben además `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`, públicas por diseño.
+**La llave de Claude nunca pasa por el chat**: la skill de setup da el enlace a las variables del sitio, la persona
+la pega (marcada como secreta, alcance Functions) **antes del único despliegue** (Netlify aplica variables nuevas
+en el siguiente despliegue) y Claude verifica con `GET /health?check=claude` → `claude: "ok"`.
 
 ## Consecuencias
 * (+) Un único lugar de secretos; rotación documentada.

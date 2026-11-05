@@ -20,9 +20,10 @@ import { HttpError, logEvent, problem } from "../lib/http.js";
 import { eq, type SupabaseRest } from "../supabase/client.js";
 
 export interface Deps {
-  /** Cliente con service_role: solo para el trabajo en segundo plano (siempre filtra por user_id). */
-  service: SupabaseRest;
-  /** Cliente con el JWT del usuario (RLS). */
+  /**
+   * Cliente con el JWT del usuario (RLS). También lo usa el trabajo en segundo plano: no hay
+   * service_role en ninguna parte de Tracky (mínimo privilegio, ADR-0004).
+   */
   asUser: (token: string) => SupabaseRest;
   anthropic: Anthropic;
   /** Lanza el procesamiento de una junta (en producción: función de Netlify en segundo plano). */
@@ -36,6 +37,8 @@ type JobStatus = "queued" | "running" | "done" | "partial" | "error";
 interface Job {
   meetingId: string;
   userId: string;
+  /** JWT del usuario (≤ 1 h; la PWA lo renueva antes de enviar). Se borra al terminar. */
+  userToken?: string;
   kind: "create" | "regenerate";
   request?: CreateNoteRequest | { templateId: TemplateId; extraInstructions?: string | undefined };
   status: JobStatus;
@@ -116,6 +119,7 @@ function nextStepsFrom(output: SummarizeResult["output"]): string {
 }
 
 function jobView(job: Job) {
+  // Nunca se devuelve el token ni la transcripción.
   return { meetingId: job.meetingId, status: job.status, event: job.last ?? null };
 }
 
@@ -126,11 +130,11 @@ async function saveJob(env: Env, job: Job): Promise<void> {
 
 // --- Trabajo en segundo plano ---------------------------------------------------------------------
 
-async function createFlow(env: Env, deps: Deps, userId: string, req: CreateNoteRequest, emit: (e: NoteEvent) => Promise<void>) {
-  const { service, anthropic } = deps;
+async function createFlow(env: Env, deps: Deps, db: SupabaseRest, userId: string, req: CreateNoteRequest, emit: (e: NoteEvent) => Promise<void>) {
+  const { anthropic } = deps;
   const started = Date.now();
-  const tags = await userTags(service, userId);
-  const existing = await findNote(service, userId, req.meetingId);
+  const tags = await userTags(db, userId);
+  const existing = await findNote(db, userId, req.meetingId);
   if (existing && existing.status === "saved") {
     await emit({ event: "done", result: toResult(existing, tags) });
     return;
@@ -155,7 +159,7 @@ async function createFlow(env: Env, deps: Deps, userId: string, req: CreateNoteR
         mode: req.mode,
         platformHint: req.platformHint,
         tags,
-        ownerName: await ownerName(service, userId),
+        ownerName: await ownerName(db, userId),
       });
     } catch (err) {
       if (!(err instanceof HttpError)) throw err;
@@ -194,7 +198,7 @@ async function createFlow(env: Env, deps: Deps, userId: string, req: CreateNoteR
     tag_confidence: tag.confidence,
     tag_alternatives: tag.alternatives,
   };
-  const [saved] = await service.insert<NoteRow>("notes", row, { onConflict: "user_id,meeting_id" });
+  const [saved] = await db.insert<NoteRow>("notes", row, { onConflict: "user_id,meeting_id" });
   if (!saved) throw new HttpError(502, "upstream_supabase_error", "Supabase no devolvió la nota", true);
 
   logEvent({
@@ -216,15 +220,16 @@ async function createFlow(env: Env, deps: Deps, userId: string, req: CreateNoteR
 async function regenerateFlow(
   env: Env,
   deps: Deps,
+  db: SupabaseRest,
   userId: string,
   meetingId: string,
   body: { templateId: TemplateId; extraInstructions?: string | undefined },
   emit: (e: NoteEvent) => Promise<void>,
 ) {
-  const { service, anthropic } = deps;
-  const note = await findNote(service, userId, meetingId);
+  const { anthropic } = deps;
+  const note = await findNote(db, userId, meetingId);
   if (!note) throw new HttpError(404, "not_found", "No hay nota para esta junta");
-  const tags = await userTags(service, userId);
+  const tags = await userTags(db, userId);
   if (tags.length === 0) throw new HttpError(409, "no_tags", "Configura tus etiquetas antes de resumir");
   await emit({ event: "summarizing" });
   const summary = await summarize(anthropic, env.CLAUDE_MODEL, effortOf(env), {
@@ -238,7 +243,7 @@ async function regenerateFlow(
     mode: note.mode ?? "online",
     platformHint: null,
     tags,
-    ownerName: await ownerName(service, userId),
+    ownerName: await ownerName(db, userId),
   });
   await emit({ event: "saving" });
   const tag = normalizeTag(summary.output, tags);
@@ -257,7 +262,7 @@ async function regenerateFlow(
       ? { title: summary.output.title.trim().slice(0, 200) || note.title, tag_id: tags.find((t) => t.name === tag.tag)?.id ?? null, tag_confidence: tag.confidence, tag_alternatives: tag.alternatives }
       : {}),
   };
-  const [saved] = await service.update<NoteRow>("notes", `id=${eq(note.id)}&user_id=${eq(userId)}`, patch);
+  const [saved] = await db.update<NoteRow>("notes", `id=${eq(note.id)}&user_id=${eq(userId)}`, patch);
   if (!saved) throw new HttpError(502, "upstream_supabase_error", "Supabase no devolvió la nota", true);
   await emit({ event: "done", result: toResult(saved, tags) });
 }
@@ -265,21 +270,25 @@ async function regenerateFlow(
 /** Ejecuta un trabajo encolado. Nunca lanza: los errores quedan registrados en el trabajo. */
 export async function runJob(env: Env, deps: Deps, userId: string, meetingId: string): Promise<void> {
   const job = await env.STATE.get<Job>(jobKey(userId, meetingId), "json");
-  if (!job || !job.request || (job.status !== "queued" && job.status !== "running")) return;
+  if (!job || !job.request || !job.userToken || (job.status !== "queued" && job.status !== "running")) return;
   const request = job.request;
+  const db = deps.asUser(job.userToken);
   job.status = "running";
   await saveJob(env, job);
 
   const emit = async (e: NoteEvent) => {
     job.last = e;
     job.status = e.event === "done" ? "done" : e.event === "partial" ? "partial" : e.event === "error" ? "error" : "running";
-    if (job.status !== "running") delete job.request; // privacidad: la transcripción no se queda en Blobs
+    if (job.status !== "running") {
+      delete job.request; // privacidad: la transcripción no se queda en Blobs
+      delete job.userToken; // ni el token
+    }
     await saveJob(env, job);
   };
 
   try {
-    if (job.kind === "create") await createFlow(env, deps, userId, request as CreateNoteRequest, emit);
-    else await regenerateFlow(env, deps, userId, meetingId, request as { templateId: TemplateId }, emit);
+    if (job.kind === "create") await createFlow(env, deps, db, userId, request as CreateNoteRequest, emit);
+    else await regenerateFlow(env, deps, db, userId, meetingId, request as { templateId: TemplateId }, emit);
   } catch (err) {
     const e = err instanceof HttpError ? err : new HttpError(500, "internal_error", "Error interno", true);
     if (!(err instanceof HttpError)) console.error("job_error", err instanceof Error ? err.name : "unknown");
@@ -317,7 +326,7 @@ export function notesRoutes(depsFactory: DepsFactory) {
     if (current && (current.status === "queued" || current.status === "running") && Date.now() - current.updatedAt < STALE_JOB_MS) {
       return c.json(jobView(current), 202);
     }
-    const job: Job = { meetingId: req.meetingId, userId, kind: "create", request: req, status: "queued", updatedAt: Date.now() };
+    const job: Job = { meetingId: req.meetingId, userId, userToken: c.get("userToken"), kind: "create", request: req, status: "queued", updatedAt: Date.now() };
     await saveJob(env, job);
     await deps.enqueue(`${userId}:${req.meetingId}`);
     const after = (await env.STATE.get<Job>(jobKey(userId, req.meetingId), "json")) ?? job;
@@ -345,7 +354,7 @@ export function notesRoutes(depsFactory: DepsFactory) {
     const note = await findNote(deps.asUser(c.get("userToken")), userId, meetingId);
     if (!note) return problem(new HttpError(404, "not_found", "No hay nota para esta junta"));
 
-    const job: Job = { meetingId, userId, kind: "regenerate", request: parsed.data, status: "queued", updatedAt: Date.now() };
+    const job: Job = { meetingId, userId, userToken: c.get("userToken"), kind: "regenerate", request: parsed.data, status: "queued", updatedAt: Date.now() };
     await saveJob(c.env, job);
     await deps.enqueue(`${userId}:${meetingId}`);
     const after = (await c.env.STATE.get<Job>(jobKey(userId, meetingId), "json")) ?? job;

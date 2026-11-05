@@ -53,7 +53,6 @@ export function createApp(depsFactory: DepsFactory, fetchImpl: Fetch = fetch) {
       // Solo indica si cada variable existe; nunca su valor (FR-404).
       configured: {
         supabase: Boolean(env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY),
-        serviceRole: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
         anthropic: Boolean(env.ANTHROPIC_API_KEY),
       },
       claude: checkClaude ? await claudeStatus(depsFactory(env).anthropic, env) : env.ANTHROPIC_API_KEY ? "configured" : "missing",

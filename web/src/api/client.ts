@@ -11,7 +11,7 @@ import {
   TaskSuggestion,
 } from "@tracky/shared";
 import { WORKER_URL } from "../config.js";
-import { accessToken } from "../supabase.js";
+import { accessToken, freshAccessToken } from "../supabase.js";
 
 export class ApiError extends Error {
   constructor(
@@ -24,8 +24,9 @@ export class ApiError extends Error {
   }
 }
 
-async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const token = await accessToken();
+async function authFetch(path: string, init: RequestInit = {}, fresh = false): Promise<Response> {
+  // Los resúmenes corren en segundo plano con el token de la persona: se envía uno con margen.
+  const token = fresh ? await freshAccessToken() : await accessToken();
   if (!token) throw new ApiError(401, "unauthorized", false, "Inicia sesión");
   let res: Response;
   try {
@@ -83,12 +84,12 @@ async function waitForJob(meetingId: string, first: JobView, onEvent: (e: NoteEv
 }
 
 export async function createNote(req: CreateNoteInput, onEvent: (e: NoteEvent) => void = () => {}) {
-  const res = await authFetch("/v1/notes", { method: "POST", headers: { "idempotency-key": req.meetingId }, body: JSON.stringify(req) });
+  const res = await authFetch("/v1/notes", { method: "POST", headers: { "idempotency-key": req.meetingId }, body: JSON.stringify(req) }, true);
   return waitForJob(req.meetingId, (await res.json()) as JobView, onEvent);
 }
 
 export async function regenerateNote(meetingId: string, body: PatchNoteRequest, onEvent: (e: NoteEvent) => void = () => {}) {
-  const res = await authFetch(`/v1/notes/${meetingId}`, { method: "PATCH", body: JSON.stringify(body) });
+  const res = await authFetch(`/v1/notes/${meetingId}`, { method: "PATCH", body: JSON.stringify(body) }, true);
   return waitForJob(meetingId, (await res.json()) as JobView, onEvent);
 }
 

@@ -1,6 +1,6 @@
 # 0009. Asistente con herramientas y búsqueda full-text
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Opciones
 1. Meter todas las notas y tareas en el prompt → caro y limitado.
