@@ -7,8 +7,8 @@ el resto. Calcula **30–40 minutos** (la mitad es la descarga del modelo de voz
 
 | Necesitas | Para qué | Costo |
 |---|---|---|
-| Una **Mac** (mejor con chip Apple M1 o más nuevo y 16 GB de RAM; 8 GB también funciona) | Transcribir tus juntas sin que el audio salga de tu computadora | — |
-| La **app de escritorio de Claude** con **Claude Code** (plan Pro o superior) | Es quien te instala todo | Tu plan de Claude |
+| Una computadora con **macOS**, **Windows 10/11** o **Linux** (8 GB de RAM o más; ideal 16 GB o una Mac con chip M) | Transcribir tus juntas sin que el audio salga de tu computadora | — |
+| La **app de escritorio de Claude** con **Claude Code** (Mac o Windows; en Linux, Claude Code en terminal), plan Pro o superior | Es quien te instala todo | Tu plan de Claude |
 | Cuenta de **GitHub** | Guarda tu copia de Tracky | Gratis |
 | Cuenta de **Supabase** (entra con tu GitHub) | Tu base de datos | Gratis |
 | Cuenta de **Netlify** (entra con tu GitHub) | Tu sitio web | Gratis |
@@ -23,6 +23,7 @@ de la plantilla).
 ## Instalar
 
 1. Abre la app de Claude → **Claude Code** → abre una carpeta nueva (por ejemplo `Documentos/Tracky`).
+   En Windows, Claude Code necesita **Git para Windows** (la app te lo pide si falta).
 2. Escribe: `Configura Tracky desde https://github.com/edreirbs/tracky`
 3. Sigue la conversación. Claude te pedirá solo esto:
    * tu correo, tu nombre y un nombre para tu sitio;
@@ -30,8 +31,12 @@ de la plantilla).
    * pegar **dos valores** en Supabase (30 s, con enlace directo);
    * pegar tu **llave de Claude en Netlify** (1 min, con enlace directo). **Nunca la pegues en el chat**;
    * abrir el **enlace de tu correo** para entrar;
-   * aceptar el **permiso de audio** de macOS y escribir un **código de 6 dígitos** en Tracky.
+   * en Mac, aceptar el **permiso de audio**; en todos, escribir un **código de 6 dígitos** en Tracky.
 4. Al final verás confeti 🎉. Listo.
+
+**Para grabar juntas en línea:** en Mac se capta solo el audio de Teams/Zoom. En Windows, al grabar, Chrome o
+Edge te preguntará qué compartir: elige **Pantalla completa** y activa **Compartir audio del sistema** (no se
+graba la pantalla). En Linux, comparte la **pestaña** de la junta (Meet, Teams o Zoom en el navegador).
 
 **Si algo falla, no te preocupes ni busques ayuda:** dile a Claude qué pasó (o pega el error). Claude es el
 desarrollador encargado de tu instalación: diagnostica y lo arregla. Después, en cualquier momento, escribe

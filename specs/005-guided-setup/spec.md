@@ -10,7 +10,8 @@ Que **cualquier persona** tenga Tracky funcionando (nube + Mac) en una sola conv
 escritorio, haciendo ella solo lo que no se puede delegar con seguridad.
 
 ## 2. Prerrequisitos (los verifica la skill al iniciar)
-* Claude Code Desktop en una Mac (Apple Silicon recomendado) con conectores **GitHub, Supabase y Netlify** activos.
+* Claude Code (app de escritorio en macOS o Windows; en Linux, Claude Code en terminal) con conectores **GitHub, Supabase y Netlify** activos.
+* Una computadora con macOS, Windows 10/11 o Linux; Chrome o Edge.
 * Cuentas gratuitas en GitHub, Supabase y Netlify; una llave de la API de Claude.
 
 ## 3. Flujo de `/tracky-setup` (reanudable; estado en `.tracky/setup-state.json`, sin secretos)
@@ -27,7 +28,7 @@ Implementado en `.claude/skills/tracky-setup/SKILL.md`.
 | 6. Llave de Claude | **Persona** (1 min) | enlace directo a las variables de Netlify (secreta, Functions) | la variable existe |
 | 7. Desplegar | Claude | `deploy-site` **una vez**, desde un clon limpio | `/health?check=claude` → `ok` |
 | 8. Primer acceso | **Persona** + Claude | enlace mágico; `execute_sql` inserta perfil y etiquetas | entra a Tracky |
-| 9. Mac | Claude (bash) + **persona** (permisos) | `scripts/setup-mac.sh install` y `pair` | puente responde y emparejado |
+| 9. Computadora | Claude (bash) + **persona** (permisos) | `scripts/setup.py install` y `pair` (macOS, Windows o Linux) | puente responde y emparejado |
 | 10. Prueba | Claude + persona | tarea con confeti, grabación corta, pregunta al asistente | todo en verde; `SETUP-RESULT.md` |
 
 ## 4. Requisitos
@@ -37,8 +38,8 @@ Implementado en `.claude/skills/tracky-setup/SKILL.md`.
 | FR-402 | Cada paso es idempotente: si ya existe (repo, proyecto, sitio, puente) se reutiliza. |
 | FR-403 | Si falta un conector, la skill se detiene y explica cómo activarlo; **nunca** pide tokens en el chat. |
 | FR-404 | La llave de Claude nunca se escribe en el chat, archivos locales ni GitHub. |
-| FR-405 | Elección automática del modelo de Whisper: ≥ 16 GB y Apple Silicon → `large-v3-turbo`; 8 GB → `small`; Intel → `faster-whisper small`. |
-| FR-406 | El puente queda como agente de `launchd` que inicia con la sesión; `/tracky-doctor` diagnostica y repara. |
+| FR-405 | Elección automática del motor y modelo: Mac Apple Silicon → mlx-whisper (`large-v3-turbo` con ≥ 16 GB, si no `small`); Windows, Linux y Mac Intel → faster-whisper (`large-v3-turbo` con GPU NVIDIA, si no `small`). |
+| FR-406 | El puente arranca solo al iniciar sesión en **macOS, Windows y Linux** (launchd, carpeta Inicio, systemd/XDG); `/tracky-doctor` diagnostica y repara (ADR-0012). |
 | FR-407 | `/tracky-update` trae cambios de la plantilla y aplica migraciones pendientes. |
 | FR-409 | Las **etiquetas son un paso obligatorio** de la configuración: Claude entrevista al usuario (temas, proyectos, áreas), propone de 3 a 12 etiquetas con su descripción para clasificar, las confirma con el usuario y las guarda; incluye siempre "Otros". |
 | FR-410 | La instalación incluye un **latido diario** a Supabase (función programada de Netlify) para que el plan gratuito no pause el proyecto por inactividad; no requiere pasos de la persona (ADR-0011). |

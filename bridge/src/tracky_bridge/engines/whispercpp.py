@@ -12,7 +12,7 @@ from . import SAMPLE_RATE, Segment
 
 
 class WhisperCppEngine:
-    """Usa un `whisper-server` de whisper.cpp ya corriendo en 127.0.0.1 (Metal en Mac)."""
+    """Usa un `whisper-server` de whisper.cpp ya corriendo en 127.0.0.1 (Metal en Mac, CUDA/CPU en Windows y Linux)."""
 
     name = "whisper-cpp"
     device = "metal/cpu"

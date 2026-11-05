@@ -10,7 +10,7 @@ Nace del código de `meeting-recording`, pero es un proyecto **independiente** (
 
 | Pestaña | Para qué |
 |---|---|
-| **Grabar** | Graba cualquier junta (Teams, Zoom, Meet, en persona), transcribe con el Whisper de tu Mac y resume con Claude. El audio nunca sale de tu computadora. |
+| **Grabar** | Graba cualquier junta (Teams, Zoom, Meet, en persona), transcribe con el Whisper de tu computadora (Mac, Windows o Linux) y resume con Claude. El audio nunca sale de tu computadora. |
 | **Notas** | Consulta de tus reuniones: busca, filtra por etiqueta y fecha, abre resumen, acuerdos y transcripción. |
 | **Tareas** | Organizador amable para TDAH (esencia *Foco Diario*): captura en una línea, Procesar, máximo 3 en Ahora, Esperando de…, Personas, Cerrar el día y Archivo. |
 | **Monedas** | Cada tarea terminada da monedas (con confeti); se canjean por tiempo libre. Nunca se pierden. |
@@ -22,20 +22,20 @@ Nace del código de `meeting-recording`, pero es un proyecto **independiente** (
 GitHub (código) ──push──▶ Netlify (PWA + funciones) ──▶ Supabase (Postgres + Auth + RLS)
                                     │
                                     └──▶ API de Claude (único secreto, solo en Netlify; sin service_role)
-Tu Mac: puente local de Whisper en 127.0.0.1 (el audio nunca sale de ahí)
+Tu computadora (Mac, Windows o Linux): puente local de Whisper en 127.0.0.1 (el audio nunca sale de ahí)
 ```
 
 ## Instalar (para cualquier persona)
 
 Guía con requisitos, cuentas y costos: **[INSTALAR.md](INSTALAR.md)**.
 
-1. Abre **Claude Code en la app de escritorio** (no la CLI) con los conectores de **GitHub, Supabase y Netlify**.
+1. Abre **Claude Code en la app de escritorio** (Mac o Windows; en Linux, Claude Code en terminal) con los conectores de **GitHub, Supabase y Netlify**.
 2. Escribe: `Configura Tracky desde https://github.com/<dueño>/tracky` o, ya clonado, `/tracky-setup`.
 3. Claude crea tu copia del repo, tu proyecto de Supabase (con tus etiquetas) y tu sitio de Netlify, instala el
-   puente de Whisper en tu Mac, descarga el modelo y lo empareja. Solo te pedirá:
+   puente de Whisper en tu computadora, descarga el modelo y lo empareja. Solo te pedirá:
    * pegar tu llave de Claude **directamente en Netlify** (nunca en el chat),
    * poner la URL de tu sitio en Supabase Auth (30 s, con enlace directo),
-   * abrir el enlace mágico de tu correo y aceptar los permisos de audio de macOS.
+   * abrir el enlace mágico de tu correo y aceptar los permisos de audio (macOS).
 
 ¿Algo falla? `/tracky-doctor`. ¿Hay versión nueva? `/tracky-update`.
 

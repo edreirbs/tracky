@@ -127,7 +127,7 @@ export function VoiceEnroll(props: { registered: boolean; onChange: () => void }
           <button class="link" disabled={state === "saving"} onClick={() => void record()}>
             {state === "saving" ? "guardando…" : "registra tu voz (30 s, una sola vez)"}
           </button>
-          . Se guarda solo en tu Mac.
+          . Se guarda solo en tu computadora.
         </p>
       )}
       {message && <p class="error">{message}</p>}

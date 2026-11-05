@@ -35,8 +35,12 @@ jobs:
         run: pnpm --filter @tracky/worker bundle
 
   bridge:
-    name: puente Whisper (Python)
-    runs-on: ubuntu-latest
+    name: puente Whisper (Python, ${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     defaults:
       run:
