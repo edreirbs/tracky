@@ -1,6 +1,6 @@
 import asyncio
 import plistlib
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from tracky_bridge import autostart
 from tracky_bridge.cli import _serve_until_paired
@@ -15,7 +15,7 @@ def test_launchd_plist():
 
 
 def test_systemd_unit():
-    unit = autostart.render_systemd("/home/a/.local/bin/tracky-bridge", Path("/home/a/.config/tracky-bridge/logs/bridge.log"))
+    unit = autostart.render_systemd("/home/a/.local/bin/tracky-bridge", PurePosixPath("/home/a/.config/tracky-bridge/logs/bridge.log"))
     assert 'ExecStart="/home/a/.local/bin/tracky-bridge"' in unit
     assert "WantedBy=default.target" in unit
     assert "StandardOutput=append:/home/a/.config/tracky-bridge/logs/bridge.log" in unit

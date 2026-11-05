@@ -29,7 +29,7 @@ def render_launchd(exe: str, log: Path) -> bytes:
     )
 
 
-def render_systemd(exe: str, log: Path) -> str:
+def render_systemd(exe: str, log: "os.PathLike[str] | str") -> str:
     return (
         "[Unit]\n"
         "Description=Tracky: puente local de Whisper (solo 127.0.0.1)\n\n"

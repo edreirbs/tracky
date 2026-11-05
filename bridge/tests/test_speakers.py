@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pytest
 
@@ -80,7 +81,8 @@ def test_registro_de_huella(tmp_path):
     assert enroll_embedding(emb, np.zeros(SAMPLE_RATE * 20, dtype=np.float32)) is None  # silencio
     store = VoiceprintStore(tmp_path / "voiceprint.npy")
     store.save(vec)
-    assert (tmp_path / "voiceprint.npy").stat().st_mode & 0o777 == 0o600
+    if os.name != "nt":  # en Windows protege la ACL del perfil; no hay permisos POSIX
+        assert (tmp_path / "voiceprint.npy").stat().st_mode & 0o777 == 0o600
     assert np.allclose(store.load(), vec)
     store.clear()
     assert store.load() is None
