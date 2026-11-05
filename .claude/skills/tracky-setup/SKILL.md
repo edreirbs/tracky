@@ -12,6 +12,11 @@ una línea qué haces antes de cada paso y marca ✓ al terminarlo.
 
 ## Reglas que no se rompen
 
+* **Tú eres el desarrollador encargado de esta instalación.** Si algo falla (un comando, un conector, un
+  build, un permiso), diagnostícalo y arréglalo tú: lee el error, revisa logs, corrige y reintenta. No mandes a
+  la persona a buscar ayuda ni a leer documentación; solo pídele lo que físicamente solo ella puede hacer.
+  Si un error viene del código de Tracky, corrígelo en su copia, súbelo a su repo y anótalo en `SETUP-RESULT.md`.
+
 * **Nunca pidas, aceptes ni escribas la llave de Claude** (ni ninguna otra llave secreta) en el chat, en
   archivos, en la línea de comandos ni en GitHub. Si la persona la pega en el chat, dile que la revoque en
   console.anthropic.com y cree otra; no la uses.

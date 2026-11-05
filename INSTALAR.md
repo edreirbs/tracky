@@ -33,7 +33,9 @@ de la plantilla).
    * aceptar el **permiso de audio** de macOS y escribir un **código de 6 dígitos** en Tracky.
 4. Al final verás confeti 🎉. Listo.
 
-¿Algo falla después? En la misma carpeta escribe `/tracky-doctor`.
+**Si algo falla, no te preocupes ni busques ayuda:** dile a Claude qué pasó (o pega el error). Claude es el
+desarrollador encargado de tu instalación: diagnostica y lo arregla. Después, en cualquier momento, escribe
+`/tracky-doctor` en la misma carpeta.
 
 ## Danos tu opinión (muy importante en esta primera versión)
 

@@ -7,4 +7,4 @@
 - [x] T305 `coin_rules` por usuario — FR-206.
 - [x] T306 UI: saldo, racha, nivel, historial con desglose, canjes — FR-207.
 - [x] T307 Celebración escalonada (discreta, grande, fiesta) con `prefers-reduced-motion` — § 5.
-- [ ] T308 Revisar los valores tras 2 semanas de uso real.
+- [ ] T308 (Opcional) Revisar los valores solo si en el uso real se sienten muy fáciles o muy difíciles.
