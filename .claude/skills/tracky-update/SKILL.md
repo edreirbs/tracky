@@ -11,6 +11,6 @@ description: Trae a la copia de la persona las mejoras de la plantilla de Tracky
 3. Con su visto bueno: `git merge upstream/main` (sin reescribir historia) y `git push origin main`.
 4. Migraciones: compara `supabase/migrations/*.sql` con `list_migrations` del conector y aplica solo las
    nuevas, en orden, con `apply_migration`. Corre los *advisors* de seguridad.
-5. Si cambió `bridge/`: `scripts/setup-mac.sh install --origin <url-del-sitio>` (conserva el emparejamiento).
+5. Si cambió `bridge/`: `uv run --no-project --python 3.12 scripts/setup.py install --origin <url-del-sitio>` (conserva el emparejamiento).
 6. Si cambió algo fuera de `docs/` y `specs/`: **un** despliegue desde un clon limpio (ver Paso 7 de
    `/tracky-setup`) y verifica `/health`. Si solo cambió documentación, no despliegues.

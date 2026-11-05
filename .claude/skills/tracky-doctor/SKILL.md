@@ -17,16 +17,18 @@ orden, di en una línea qué encontraste y **arregla lo que puedas sin pedir nad
    Corre los *advisors* de seguridad; explica y corrige errores. Verifica que `allowed_emails` tenga su
    correo y que existan etiquetas: `select count(*) from public.tags;`.
 3. **Entrar**: si el enlace mágico falla, revisa el Paso 5 (URL del sitio en Auth).
-4. **Puente** (solo en la Mac): `scripts/setup-mac.sh status`.
-   * No instalado → `scripts/setup-mac.sh install --origin <url-del-sitio>`.
-   * No responde → `launchctl load ~/Library/LaunchAgents/app.tracky.tracky-bridge.plist`; lee las
-     últimas líneas de `~/.config/tracky-bridge/logs/bridge.log` (no contienen audio ni texto).
+4. **Puente** (en su computadora: macOS, Windows o Linux): `uv run --no-project --python 3.12 scripts/setup.py status`.
+   * No instalado → `uv run --no-project --python 3.12 scripts/setup.py install --origin <url-del-sitio>`.
+   * No responde → `tracky-bridge install-autostart` (vuelve a instalar y arrancar el inicio automático);
+     lee las últimas líneas de `~/.config/tracky-bridge/logs/bridge.log` (no contienen audio ni texto).
    * Origen equivocado (la app dice "puente apagado" aunque responde) → `tracky-bridge set-origin <url>` y
-     reinicia el agente (`launchctl unload` + `load`).
-   * "Sin emparejar" → `scripts/setup-mac.sh pair`.
-5. **Audio de los demás**: `tracky-bridge check-system-audio` con un video sonando. Si falla, guía a
-   Ajustes del Sistema → Privacidad y seguridad → Grabación de pantalla y audio del sistema → activar
-   `tracky-audiotap`.
+     `tracky-bridge install-autostart` para reiniciarlo.
+   * "Sin emparejar" → `uv run --no-project --python 3.12 scripts/setup.py pair`.
+5. **Audio de los demás**:
+   * macOS: `tracky-bridge check-system-audio` con un video sonando. Si falla, guía a Ajustes del Sistema →
+     Privacidad y seguridad → Grabación de pantalla y audio del sistema → activar `tracky-audiotap`.
+   * Windows: al grabar, compartir **Pantalla completa** con **Compartir audio del sistema** (Chrome/Edge).
+   * Linux: compartir la **pestaña** de la junta web con audio.
 6. **Navegador**: recomienda Chrome o Edge, con permiso de micrófono y de red local (127.0.0.1).
 
 Termina con un resumen: qué estaba mal, qué arreglaste y qué falta (si algo).

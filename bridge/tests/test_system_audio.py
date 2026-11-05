@@ -10,6 +10,11 @@ from tracky_bridge.security import Pairing, TokenStore
 from tracky_bridge.server import create_app
 from tracky_bridge.system_audio import BLOCK, FakeSource, HelperSource, check, source_factory
 
+# La captura nativa del audio del sistema es solo de macOS (tracky-audiotap). Estas pruebas simulan el
+# ayudante con un script ejecutable de Unix; en Windows el audio de los demás se comparte desde el navegador
+# (ADR-0012) y se prueba abajo que el puente lo reporte como no disponible.
+unix_helper = pytest.mark.skipif(sys.platform == "win32", reason="el ayudante simulado es un ejecutable de Unix")
+
 PORT = 47831
 GOOD = {"Host": f"127.0.0.1:{PORT}", "Origin": "https://tracky-prueba.netlify.app"}
 
@@ -79,18 +84,21 @@ def fake_helper(tmp_path, body):
     return path
 
 
+@unix_helper
 async def test_helper_lee_tuberia(tmp_path):
     path = fake_helper(tmp_path, f"sys.stdout.buffer.write(struct.pack('<{BLOCK * 2}f', *([0.5] * {BLOCK * 2}))); sys.stdout.flush()")
     peak, failure = await check(lambda: HelperSource(path), seconds=0.2)
     assert failure is None and abs(peak - 0.5) < 1e-6
 
 
+@unix_helper
 async def test_helper_reporta_error(tmp_path):
     path = fake_helper(tmp_path, "sys.stderr.write('error: tap_create -1\\n'); sys.exit(1)")
     peak, failure = await check(lambda: HelperSource(path), seconds=0.5)
     assert failure == "tap_create" and peak == 0.0
 
 
+@unix_helper
 async def test_helper_se_detiene_al_cerrar_stdin(tmp_path):
     path = fake_helper(tmp_path, "sys.stdin.read()")
     source = HelperSource(path)
@@ -107,6 +115,7 @@ def test_factory(tmp_path):
     assert isinstance(source_factory(str(helper))(), HelperSource)  # type: ignore[misc]
 
 
+@unix_helper
 async def test_check_no_se_cuelga_sin_audio(tmp_path, monkeypatch):
     import tracky_bridge.system_audio as sa
 
@@ -125,6 +134,7 @@ def test_apps_de_llamada():
     assert call_apps_from(["com.google.Chrome"]) == []
 
 
+@unix_helper
 async def test_endpoint_calls(aiohttp_client, store, tmp_path):
     from tracky_bridge.system_audio import call_watcher
 
@@ -141,3 +151,11 @@ async def test_endpoint_calls(aiohttp_client, store, tmp_path):
     client2 = await aiohttp_client(app2)
     body2 = await (await client2.get("/calls", headers={**GOOD, "Authorization": f"Bearer {token}"})).json()
     assert body2 == {"supported": False, "apps": []}
+
+
+def test_fuera_de_macos_no_hay_captura_nativa(monkeypatch):
+    from tracky_bridge import system_audio
+
+    monkeypatch.setattr(system_audio.sys, "platform", "win32")
+    assert source_factory("auto") is None
+    assert system_audio.call_watcher("auto") is None

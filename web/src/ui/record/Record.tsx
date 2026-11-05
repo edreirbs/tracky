@@ -150,7 +150,7 @@ function BridgeSetup(props: { bridge: BridgeHealth | null; onRetry: () => void; 
       <section class="rec-card">
         <h2>Inicia el puente de Whisper</h2>
         <p>
-          Normalmente arranca solo con tu Mac (lo instaló la configuración). Si no, en la Terminal ejecuta <code>tracky-bridge</code>. Puedes grabar de todos modos: el audio se guarda en
+          Normalmente arranca solo al encender tu computadora (lo instaló la configuración). Si no, en la Terminal ejecuta <code>tracky-bridge</code>. Puedes grabar de todos modos: el audio se guarda en
           este navegador y se transcribe en cuanto el puente esté activo.
         </p>
         <p class="muted">Si el navegador pregunta por acceso a la red local, permítelo (solo para 127.0.0.1).</p>
@@ -227,18 +227,19 @@ function Home(props: {
         <label>
           Audio de los demás
           <select value={otherAudio} onChange={(e) => setOtherAudio(e.currentTarget.value as "bridge" | "share")}>
-            <option value="bridge">Automático: lo que suena en la Mac (Teams, Zoom…)</option>
+            <option value="bridge">Automático: lo que suena en tu computadora (Teams, Zoom…)</option>
             <option value="share">Compartir una pestaña o pantalla</option>
           </select>
         </label>
       )}
       {mode === "online" && useNative && (
-        <p class="muted">Se graba tu micrófono y lo que suena en tu Mac, sin pedir compartir pantalla. El audio no sale de tu computadora.</p>
+        <p class="muted">Se graba tu micrófono y lo que suena en tu computadora, sin pedir compartir pantalla. El audio no sale de tu computadora.</p>
       )}
       {mode === "online" && !useNative && (
         <p class="muted">
           Al grabar, elige la <strong>pestaña</strong> o <strong>pantalla</strong> de la junta y activa <strong>“Compartir audio”</strong>.
-          No se graba la pantalla.
+          Si la junta es en la app de Teams o Zoom en Windows, elige <strong>Pantalla completa</strong> y{" "}
+          <strong>“Compartir audio del sistema”</strong>. No se graba la pantalla.
         </p>
       )}
       {props.bridge?.speakers && props.paired && (

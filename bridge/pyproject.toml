@@ -10,7 +10,7 @@ dependencies = [
   "tomli>=2.0; python_version < '3.11'",
   # Distinguir voces ("Participante N") con un modelo ONNX local (ADR-0010).
   "sherpa-onnx>=1.12",
-  # Motor por defecto en Mac con Apple Silicon (GPU/Metal).
+  # Motor por defecto en Mac con Apple Silicon (GPU/Metal). En Windows/Linux/Mac Intel: extra [faster].
   "mlx-whisper>=0.4; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]
 

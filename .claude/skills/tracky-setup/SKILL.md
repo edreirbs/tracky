@@ -1,13 +1,13 @@
 ---
 name: tracky-setup
-description: Configura Tracky de principio a fin desde Claude Code en la app de escritorio (Mac) usando los conectores de GitHub, Supabase y Netlify: copia del repo, base de datos, etiquetas, sitio, llave de Claude, puente de Whisper, emparejamiento y prueba final. Úsala cuando la persona diga "configura Tracky", "instala Tracky", "/tracky-setup" o retome una configuración a medias.
+description: Configura Tracky de principio a fin desde Claude Code (app de escritorio en Mac o Windows; terminal en Linux) usando los conectores de GitHub, Supabase y Netlify: copia del repo, base de datos, etiquetas, sitio, llave de Claude, puente de Whisper, emparejamiento y prueba final. Úsala cuando la persona diga "configura Tracky", "instala Tracky", "/tracky-setup" o retome una configuración a medias.
 ---
 
 # Configurar Tracky (spec 005)
 
 Eres quien hace casi todo. La persona solo hace lo que no se puede delegar con seguridad:
 **pegar su llave de Claude en Netlify**, **poner la URL del sitio en Supabase Auth**, **aceptar permisos
-de macOS** y **abrir el enlace mágico de su correo**. Habla en español de México, cálido y breve; avisa en
+de su sistema** y **abrir el enlace mágico de su correo**. Funciona en macOS, Windows y Linux. Habla en español de México, cálido y breve; avisa en
 una línea qué haces antes de cada paso y marca ✓ al terminarlo.
 
 ## Reglas que no se rompen
@@ -48,15 +48,16 @@ una línea qué haces antes de cada paso y marca ✓ al terminarlo.
 
 ## Paso 0 — Revisión
 
-1. Comprueba que estás en una Mac: `uname -s` (Darwin), `uname -m`, `sw_vers -productVersion`,
-   `sysctl -n hw.memsize`. Si no es Mac, la parte de la nube funciona igual, pero la grabadora no:
-   dilo y pregunta si sigue.
+1. Detecta el sistema: `uname -s` (Darwin = macOS, Linux, o `MINGW`/`MSYS` = Windows con Git Bash) y `uname -m`.
+   Todo funciona en los tres; solo cambia cómo se captura el audio de los demás (Paso 9).
 2. Comprueba los conectores (GitHub, Supabase, Netlify). Si falta alguno, detente con instrucciones.
 3. Pregunta **en un solo mensaje**:
    * su correo (con ese entrará a Tracky),
    * cómo quiere que el resumen la nombre cuando habla ("Yo"),
    * nombre para su sitio (sugiere `tracky-<nombre>`; solo minúsculas, números y guiones).
-   Detecta la zona horaria con `readlink /etc/localtime` (la parte después de `zoneinfo/`) y confírmala.
+   Detecta la zona horaria (macOS/Linux: `readlink /etc/localtime`, la parte después de `zoneinfo/`;
+   Windows: `powershell -c "(Get-TimeZone).Id"` y conviértela a IANA, p. ej. "Central Standard Time (Mexico)" →
+   `America/Mexico_City`) y confírmala.
 
 ## Paso 1 — Su copia del repo (GitHub)
 
@@ -152,16 +153,26 @@ Confirma con `manage-env-vars` + `getAllEnvVars` que `ANTHROPIC_API_KEY` existe 
    ```
    Escapa comillas simples duplicándolas. Pídele recargar la página.
 
-## Paso 9 — La Mac: Whisper local, audio del sistema y arranque automático
+## Paso 9 — La computadora: Whisper local, audio de los demás y arranque automático
 
-1. Corre `scripts/setup-mac.sh install --origin https://<nombre>.netlify.app` (sin sudo; instala `uv`,
-   el puente, elige el modelo por chip y RAM, lo descarga, compila la captura de audio y deja el
-   arranque automático). Puede tardar varios minutos por la descarga: avísale.
-2. Si la salida dice `ACCION_USUARIO`, explícale qué aceptar (instalador de Command Line Tools) y repite el paso.
-3. Permiso de audio del sistema: pídele poner un video con sonido y corre `tracky-bridge check-system-audio`;
-   macOS pedirá permiso a "tracky-audiotap" la primera vez: que lo acepte y repite la prueba.
-4. Emparejar: pídele abrir la pestaña **Grabar** de Tracky y corre `scripts/setup-mac.sh pair`. Lee la
-   línea `CODIGO_EMPAREJAMIENTO: ######` y dísela; espera a que el script diga ✓.
+1. Asegura `uv` (sin administrador):
+   * macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+   * Windows: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+   Después usa la ruta completa si `uv` aún no está en el PATH (`~/.local/bin/uv`).
+2. Corre `uv run --no-project --python 3.12 scripts/setup.py install --origin https://<nombre>.netlify.app`.
+   Elige el motor por equipo (Mac Apple Silicon → mlx-whisper; Windows/Linux/Mac Intel → faster-whisper, con
+   GPU NVIDIA si hay), lo descarga, guarda el origen y deja el arranque automático (launchd, carpeta Inicio de
+   Windows, o systemd/XDG en Linux). Puede tardar varios minutos por la descarga: avísale.
+3. Si la salida dice `ACCION_USUARIO` (macOS: instalador de Command Line Tools), explícale qué aceptar y repite.
+4. Audio de los demás:
+   * **macOS**: pídele poner un video con sonido y corre `tracky-bridge check-system-audio`; macOS pedirá
+     permiso a "tracky-audiotap" la primera vez: que lo acepte y repite la prueba.
+   * **Windows**: explícale que, al grabar una junta en línea, Chrome/Edge le pedirá qué compartir: **Pantalla
+     completa** + **Compartir audio del sistema** (sirve para la app de Teams/Zoom). No se graba la pantalla.
+   * **Linux**: compartir la **pestaña** de la junta web (Meet/Teams/Zoom en el navegador) con audio.
+5. Emparejar: pídele abrir la pestaña **Grabar** de Tracky y corre
+   `uv run --no-project --python 3.12 scripts/setup.py pair`. Lee la línea `CODIGO_EMPAREJAMIENTO: ######`
+   y dísela; espera a que diga ✓ (el puente queda corriendo en segundo plano).
 
 ## Paso 10 — Prueba final y entrega
 
@@ -180,5 +191,5 @@ Confirma con `manage-env-vars` + `getAllEnvVars` que `ANTHROPIC_API_KEY` existe 
 | El enlace mágico abre `localhost:3000` | Falta el Paso 5 | Paso 5 y reenviar enlace |
 | No llega el correo | Límite del correo gratuito de Supabase | Esperar unos minutos; revisar spam |
 | `/health` sin Claude | Variable creada después del despliegue | Un redespliegue |
-| "Puente apagado" | El agente no arrancó | `scripts/setup-mac.sh status` y `/tracky-doctor` |
+| "Puente apagado" | El arranque automático no corrió | `uv run --no-project --python 3.12 scripts/setup.py status` y `/tracky-doctor` |
 | Proyecto de Supabase en pausa | El latido no corrió (sitio borrado o sin desplegar) | Reanudarlo (`restore_project`) y revisar el despliegue |

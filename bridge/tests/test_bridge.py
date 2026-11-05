@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pytest
 
@@ -103,7 +104,8 @@ def test_token_se_guarda_como_hash(store, pairing):
     token = pairing.try_pair(pairing.new_code())
     assert token and store.verify(token)
     assert token not in store.path.read_text()
-    assert oct(store.path.stat().st_mode & 0o777) == "0o600"
+    if os.name != "nt":  # en Windows protege la ACL del perfil; no hay permisos POSIX
+        assert oct(store.path.stat().st_mode & 0o777) == "0o600"
 
 
 # --- transcripción -------------------------------------------------------------------------------

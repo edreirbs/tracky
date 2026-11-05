@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import plistlib
 import shutil
 import subprocess
 import sys
@@ -12,7 +11,7 @@ from pathlib import Path
 
 from aiohttp import web
 
-from . import __version__
+from . import __version__, autostart
 from .config import config_dir, load_config, save_origin
 from .engines import available_engines, create_engine
 from .security import Pairing, TokenStore
@@ -20,42 +19,45 @@ from .speakers import create_diarizer
 from .system_audio import check as check_system_audio
 from .system_audio import call_watcher, find_helper, source_factory
 
-LAUNCH_AGENT_LABEL = "app.tracky.tracky-bridge"
 
 
 def _store() -> TokenStore:
     return TokenStore(config_dir() / "token.sha256")
 
 
+def _exe() -> str | None:
+    return shutil.which("tracky-bridge")
+
+
+def _log() -> Path:
+    return config_dir() / "logs" / "bridge.log"
+
+
 def install_autostart() -> int:
-    if sys.platform != "darwin":
-        print("El arranque automático solo está implementado para macOS.")
-        return 1
-    exe = shutil.which("tracky-bridge")
+    exe = _exe()
     if not exe:
-        print("No encontré `tracky-bridge` en el PATH. Instálalo con pipx o `uv tool install`.")
+        print("No encontré `tracky-bridge` en el PATH. Instálalo con `uv tool install`.")
         return 1
-    plist_path = Path.home() / "Library/LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist"
-    plist_path.parent.mkdir(parents=True, exist_ok=True)
-    logs = config_dir() / "logs"
-    logs.mkdir(parents=True, exist_ok=True)
-    plist_path.write_bytes(
-        plistlib.dumps(
-            {
-                "Label": LAUNCH_AGENT_LABEL,
-                "ProgramArguments": [exe],
-                "RunAtLoad": True,
-                "KeepAlive": True,
-                "StandardOutPath": str(logs / "bridge.log"),
-                "StandardErrorPath": str(logs / "bridge.log"),
-            }
-        )
-    )
-    subprocess.run(["launchctl", "unload", str(plist_path)], check=False, capture_output=True)
-    subprocess.run(["launchctl", "load", str(plist_path)], check=True)
-    print(f"✓ Arranque automático instalado: {plist_path}")
-    print(f"  Bitácora: {logs / 'bridge.log'} (sin audio ni texto de las juntas)")
+    path = autostart.install(exe, _log())
+    print(f"✓ Arranque automático instalado: {path}")
+    print(f"  Bitácora: {_log()} (sin audio ni texto de las juntas)")
     return 0
+
+
+async def _serve_until_paired(app: web.Application, port: int, store: TokenStore, timeout_s: int) -> bool:
+    """Sirve solo hasta que la app se empareje (o se acabe el tiempo)."""
+    before = store.path.stat().st_mtime_ns if store.path.exists() else 0
+    runner = web.AppRunner(app, access_log=None)
+    await runner.setup()
+    await web.TCPSite(runner, "127.0.0.1", port).start()
+    try:
+        for _ in range(timeout_s):
+            await asyncio.sleep(1)
+            if store.path.exists() and store.path.stat().st_mtime_ns != before:
+                return True
+        return False
+    finally:
+        await runner.cleanup()
 
 
 def _check_system_audio(setting: str) -> int:
@@ -83,7 +85,7 @@ def _check_system_audio(setting: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tracky-bridge", description="Puente local entre la app y Whisper.")
-    parser.add_argument("command", nargs="?", default="serve", choices=["serve", "pair", "unpair", "doctor", "install-autostart", "check-system-audio", "set-origin", "warmup"])
+    parser.add_argument("command", nargs="?", default="serve", choices=["serve", "pair", "unpair", "doctor", "install-autostart", "check-system-audio", "set-origin", "warmup", "pair-now"])
     parser.add_argument("value", nargs="?", help="Para set-origin: https://tu-sitio.netlify.app")
     parser.add_argument("--dev", action="store_true", help="Permite el origen http://localhost:5173")
     parser.add_argument("--port", type=int)
@@ -140,6 +142,17 @@ def main(argv: list[str] | None = None) -> int:
     engine.load()
 
     pairing = Pairing(store)
+    if args.command == "pair-now":
+        # Emparejar sin pelear por el puerto con la instancia de arranque automático (cualquier SO).
+        autostart.stop()
+        code = pairing.new_code()
+        print(f"CODIGO_EMPAREJAMIENTO: {code}", flush=True)
+        print("Escríbelo en Tracky → Grabar → 'Empareja el puente' (vence en 2 minutos).", flush=True)
+        app = __import__("tracky_bridge.server", fromlist=["create_app"]).create_app(cfg, engine, store, pairing)
+        ok = asyncio.run(_serve_until_paired(app, cfg.port, store, 180))
+        autostart.start(_exe(), _log())
+        print("✓ Emparejado. El puente sigue corriendo en segundo plano." if ok else "✗ No se emparejó a tiempo; repite: tracky-bridge pair-now")
+        return 0 if ok else 1
     if args.command == "pair" or not store.is_paired():
         code = pairing.new_code()
         print(f"\n  Código de emparejamiento: {code}   (vence en 2 minutos)\n", flush=True)

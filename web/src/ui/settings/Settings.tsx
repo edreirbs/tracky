@@ -118,7 +118,7 @@ export function Settings() {
           Claude: <strong>{claude}</strong>
         </p>
         <p>
-          Whisper en tu Mac: <strong>{bridge}</strong>
+          Whisper en tu computadora: <strong>{bridge}</strong>
         </p>
         <p class="small muted">
           ¿Algo no funciona? Abre Claude Code en la app de escritorio, en la carpeta de Tracky, y escribe <code>/tracky-doctor</code>: lo diagnostica y lo arregla.
