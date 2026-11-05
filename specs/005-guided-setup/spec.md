@@ -19,7 +19,8 @@ escritorio, haciendo ella solo lo que no se puede delegar con seguridad.
 | 0. Revisión | Claude | lista de herramientas de conectores, `sw_vers`, `uname -m` | conectores y Mac compatibles |
 | 1. Repo | Claude | GitHub: crear repo desde la plantilla `tracky`, clonar | repo propio clonado |
 | 2. Supabase | Claude | `create_project` (región cercana), `apply_migration` (esquema, RLS, funciones, catálogo), `allowed_emails`, `get_project_url`, `get_publishable_keys` | `get_advisors` sin alertas de seguridad |
-| 3. Netlify | Claude | crear sitio ligado al repo, variables (URL y publishable key; `service_role` como secreta), un despliegue | sitio responde `GET /health` |
+| 3. Etiquetas | Claude + **usuario** | Conversación: "¿De qué temas son tus juntas y notas?"; Claude propone nombre + descripción de cada etiqueta, el usuario ajusta y Claude las inserta en `tags` con `execute_sql` | ≥ 2 etiquetas con descripción |
+| 3b. Netlify | Claude | crear sitio ligado al repo, variables (URL y publishable key; `service_role` como secreta), un despliegue | sitio responde `GET /health` |
 | 4. Llave de Claude | **Usuario** | Claude da el enlace directo a las variables de Netlify | `/health` → `claude: "ok"` |
 | 5. Mac | Claude (bash) | Homebrew/uv, ffmpeg, `tracky-bridge`, modelo de Whisper según chip y RAM, `audiotap`, `launchd` | `curl 127.0.0.1:47831/health` |
 | 6. Permisos | **Usuario** | Aceptar micrófono / grabación de audio en macOS | `check-system-audio` con nivel > 0 |
@@ -37,6 +38,7 @@ escritorio, haciendo ella solo lo que no se puede delegar con seguridad.
 | FR-405 | Elección automática del modelo de Whisper: ≥ 16 GB y Apple Silicon → `large-v3-turbo`; 8 GB → `small`; Intel → `faster-whisper small`. |
 | FR-406 | El puente queda como agente de `launchd` que inicia con la sesión; `/tracky-doctor` diagnostica y repara. |
 | FR-407 | `/tracky-update` trae cambios de la plantilla y aplica migraciones pendientes. |
+| FR-409 | Las **etiquetas son un paso obligatorio** de la configuración: Claude entrevista al usuario (temas, proyectos, áreas), propone de 3 a 12 etiquetas con su descripción para clasificar, las confirma con el usuario y las guarda; incluye siempre "Otros". |
 | FR-408 | Un solo despliegue a producción por configuración (ahorro de créditos de Netlify). |
 | NFR-401 | Configuración completa en < 20 min en una Mac con buena conexión (sin contar descarga del modelo). |
 | NFR-402 | Prueba de aceptación: una persona sin experiencia técnica la completa sin ayuda externa. |

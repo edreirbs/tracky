@@ -33,6 +33,7 @@ Tracky debe grabar **igual de bien** y guardar las notas en Supabase, con una pe
 | FR-007 | Editar título y etiqueta, regenerar resumen, borrar con confirmación, exportar a `.md`. |
 | FR-008 | Botón "Crear tareas" sobre los acuerdos: muestra la lista editable y crea las elegidas en `tasks` (`source = meeting`). |
 | FR-009 | La transcripción local (IndexedDB) se borra al confirmar que la nota existe en Supabase (configurable). |
+| FR-010 | El catálogo de etiquetas (nombre + descripción para que Claude clasifique) se define **en la configuración inicial** (spec 005, paso 3) y se edita después en Ajustes. Sin catálogo no se habilita la grabación. |
 
 ## 4. No funcionales
 | ID | Requisito |
@@ -46,13 +47,13 @@ Tracky debe grabar **igual de bien** y guardar las notas en Supabase, con una pe
 ## 5. Modelo de datos (borrador)
 ```
 tags(id, user_id, name, description, color, sort, created_at)            unique(user_id, name)
-notes(id, user_id, meeting_id, title, tag_id, estado, status,
+notes(id, user_id, kind (meeting|memo), meeting_id null, title, tag_id, estado, status,
       summary_md, key_points jsonb, decisions jsonb, action_items jsonb,
       transcript jsonb, transcript_text, started_at, duration_s,
       template, language, search tsvector generated, created_at, updated_at)
       unique(user_id, meeting_id); gin(search)
+      -- kind = memo: nota suelta del Archivo (spec 002), sin transcripción
 ```
 
-## 6. Preguntas abiertas
-* Q1. ¿El catálogo inicial de etiquetas se copia del `config/tags.yaml` actual o se le pregunta a cada persona en el setup?
-  *Propuesta:* catálogo genérico (Proyectos, Clientes, Equipo, Personal, Otros) y la skill ofrece personalizarlo.
+## 6. Decisiones
+* ~~Q1. Catálogo inicial de etiquetas~~ → **Resuelto (2026-11-05):** se define en la configuración inicial (FR-010, spec 005 FR-409).

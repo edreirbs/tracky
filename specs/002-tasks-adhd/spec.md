@@ -20,6 +20,7 @@ la percepción del tiempo no sostienen. **Cada pantalla responde una sola pregun
 | **Esperando de…** | "¿A quién le tengo que volver a preguntar?" | GTD: en espera |
 | **Personas** | "¿Cómo va lo de X?" | Áreas de responsabilidad |
 | **Cerrar el día** | "¿Cómo dejo listo mañana?" | Ritual de *shutdown* (Newport) |
+| **Archivo** (contactos, notas sueltas, etiquetas, `Ctrl+K`) | "¿Dónde está aquello?" | GTD: material de referencia / Segundo cerebro |
 | **Pregúntale a Tracky** (panel) | cualquier pregunta | spec 004 |
 
 ## 3. El cargador de tareas (captura + procesar)
@@ -52,7 +53,7 @@ la percepción del tiempo no sostienen. **Cada pantalla responde una sola pregun
 * **US-6 (P2)** Personas: color de post-it por persona y todo lo de cada una en una vista.
 * **US-7 (P2)** Cerrar el día: 3 pasos y 3 **estrellas** para mañana que aparecen solas en Ahora.
 * **US-8 (P2)** Acuerdos de una nota de reunión → Bandeja en un clic, con enlace a la nota (puente con spec 001).
-* **US-9 (P3)** Buscador global `Ctrl+K` (tareas, notas de reunión, personas).
+* **US-9 (P2)** Archivo: contactos y notas sueltas con etiquetas; buscador global `Ctrl+K` (tareas, contactos, notas, reuniones).
 
 ## 5. Requisitos funcionales
 | ID | Requisito |
@@ -70,6 +71,9 @@ la percepción del tiempo no sostienen. **Cada pantalla responde una sola pregun
 | FR-111 | Lectura/escritura **directo a Supabase** con RLS; *outbox* local sin conexión. |
 | FR-112 | Estilo visual según `design-ref/NOTES.md`: pizarra + papel + post-its, tokens tal cual, fuentes autoalojadas. |
 | FR-113 | Nunca rojo de "atrasado": una tarea vencida se ofrece para mover a Hoy / Mañana / Algún día. |
+| FR-114 | **Archivo** (como Foco Diario): contactos (`contacts`: nombre, empresa, teléfono, correo, `person_id`, etiquetas, fijado) y notas sueltas (`notes` con `kind = memo`: título, cuerpo, etiquetas, fijada). Lo que no es tarea sale de la lista de tareas. |
+| FR-115 | Buscador `Ctrl+K` sobre tareas, contactos, notas sueltas y notas de reunión. |
+| FR-116 | La pestaña **Notas** (spec 001) y el **Archivo** conviven: Notas se centra en reuniones; Archivo reúne contactos y notas sueltas, y enlaza a las reuniones de cada persona. |
 
 ## 6. No funcionales
 | ID | Requisito |
@@ -79,6 +83,6 @@ la percepción del tiempo no sostienen. **Cada pantalla responde una sola pregun
 | NFR-103 | Evals del parser: ≥ 90 % de fechas relativas correctas en es-MX ("el jueves", "pasado mañana", "fin de mes"). |
 | NFR-104 | Prueba E2E equivalente a `foco-diario/pruebas/prueba-basica.js` (capturar, procesar, terminar, buscar) con Playwright. |
 
-## 7. Preguntas abiertas
-* Q1. ¿Conservar la pestaña "Archivo" (contactos y notas sueltas) de Foco Diario o basta con las notas de reunión? *Propuesta:* v1 sin contactos; notas sueltas = nota de reunión sin audio.
+## 7. Decisiones y preguntas abiertas
+* ~~Q1. ¿Conservar Archivo?~~ → **Resuelto (2026-11-05):** se conservan ambas, la pestaña Notas y el Archivo (FR-114 a FR-116).
 * Q2. ¿Tareas que se repiten (idea abierta de Foco Diario)? *Propuesta:* v1.1.

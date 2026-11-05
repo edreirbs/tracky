@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | **Borrador para revisión** (valores ajustables en `coin_rules`) |
+| Estado | **Aprobada** (2026-11-05; valores ajustables en `coin_rules`) |
 | Fecha | 2026-11-05 |
 
 ## 1. Objetivo
@@ -70,4 +70,4 @@ color o estilos de confeti. No dan ventajas.
 
 ## 8. Preguntas abiertas
 * Q1. ¿El tiempo libre es solo simbólico o quieres el temporizador? *Propuesta:* temporizador opcional.
-* Q2. ¿Valores de la tabla OK? Son el punto de partida; se ajustan tras 2 semanas de uso.
+* ~~Q2. ¿Valores de la tabla OK?~~ → **Aprobados (2026-11-05).** Se revisan tras 2 semanas de uso.
