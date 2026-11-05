@@ -1,0 +1,12 @@
+{
+  "name": "Tracky",
+  "short_name": "Tracky",
+  "description": "Reuniones, tareas para TDAH y monedas canjeables por tiempo libre.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#2C3230",
+  "theme_color": "#2C3230",
+  "lang": "es-MX",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

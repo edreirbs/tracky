@@ -1,0 +1,31 @@
+{
+  "name": "@tracky/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen": "node ../scripts/gen-prompts.mjs",
+    "dev": "pnpm gen && vite",
+    "build": "pnpm gen && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src",
+    "typecheck": "pnpm gen && tsc --noEmit",
+    "test": "pnpm gen && vitest run"
+  },
+  "dependencies": {
+    "@tracky/shared": "workspace:*",
+    "idb": "^8.0.4",
+    "preact": "^11.1.1",
+    "zod": "^4.6.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "@fontsource/manrope": "^5.3.0",
+    "@fontsource/caveat": "^5.3.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "fake-indexeddb": "^6.2.7",
+    "jsdom": "^30.1.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  }
+}
