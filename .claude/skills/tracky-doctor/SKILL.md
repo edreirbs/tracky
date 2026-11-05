@@ -12,6 +12,8 @@ orden, di en una línea qué encontraste y **arregla lo que puedas sin pedir nad
    * No responde → revisa el último despliegue con el conector de Netlify.
    * `claude: missing|invalid` → Paso 6 de `/tracky-setup` (la persona pega la llave en Netlify) y un redespliegue.
 2. **Supabase**: estado del proyecto. Si está en pausa → `restore_project` y espera a que esté activo.
+   Revisa el latido: `select beat_at, beats from public.heartbeat;` — si tiene más de 2 días, revisa en
+   Netlify que la función programada `heartbeat` exista en el despliegue publicado.
    Corre los *advisors* de seguridad; explica y corrige errores. Verifica que `allowed_emails` tenga su
    correo y que existan etiquetas: `select count(*) from public.tags;`.
 3. **Entrar**: si el enlace mágico falla, revisa el Paso 5 (URL del sitio en Auth).

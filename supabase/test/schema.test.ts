@@ -228,3 +228,16 @@ describe("búsqueda", () => {
     expect(r.rows.map((x) => x.kind).sort()).toEqual(["contact", "memo", "task"]);
   });
 });
+
+describe("latido (FR-410)", () => {
+  it("anon puede latir pero no leer la tabla", async () => {
+    await db.exec("set role anon");
+    const r = await db.query<{ t: string }>("select public.tracky_heartbeat() as t");
+    expect(r.rows[0]!.t).toBeTruthy();
+    await db.query("select public.tracky_heartbeat()");
+    await expect(db.query("select * from public.heartbeat")).rejects.toThrow(/permission denied/);
+    await db.exec("reset role");
+    const row = await db.query<{ beats: string }>("select beats from public.heartbeat");
+    expect(Number(row.rows[0]!.beats)).toBe(2);
+  });
+});

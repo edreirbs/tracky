@@ -8,7 +8,7 @@
     "lint": "eslint src test ../netlify/functions",
     "typecheck": "pnpm gen && tsc --noEmit",
     "test": "pnpm gen && vitest run",
-    "bundle": "pnpm build:server && esbuild ../netlify/functions/api.mts ../netlify/functions/run-note.mts --bundle --platform=node --format=esm --target=node22 --outdir=/tmp/tracky-functions --log-level=warning",
+    "bundle": "pnpm build:server && esbuild ../netlify/functions/api.mts ../netlify/functions/run-note.mts ../netlify/functions/heartbeat.mts --bundle --platform=node --format=esm --target=node22 --outdir=/tmp/tracky-functions --log-level=warning",
     "build:server": "pnpm gen && esbuild src/netlify/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.mjs --log-level=warning --external:@netlify/functions --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\""
   },
   "dependencies": {

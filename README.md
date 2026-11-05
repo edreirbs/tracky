@@ -27,6 +27,8 @@ Tu Mac: puente local de Whisper en 127.0.0.1 (el audio nunca sale de ahí)
 
 ## Instalar (para cualquier persona)
 
+Guía con requisitos, cuentas y costos: **[INSTALAR.md](INSTALAR.md)**.
+
 1. Abre **Claude Code en la app de escritorio** (no la CLI) con los conectores de **GitHub, Supabase y Netlify**.
 2. Escribe: `Configura Tracky desde https://github.com/<dueño>/tracky` o, ya clonado, `/tracky-setup`.
 3. Claude crea tu copia del repo, tu proyecto de Supabase (con tus etiquetas) y tu sitio de Netlify, instala el
