@@ -1,6 +1,6 @@
 # 0001. Repo independiente a partir de meeting-recording
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Contexto
 Tracky reutiliza casi todo `meeting-recording` (captura, puente, resumen), pero cambia el almacenamiento, agrega

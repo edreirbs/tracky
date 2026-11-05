@@ -14,19 +14,21 @@ escritorio, haciendo ella solo lo que no se puede delegar con seguridad.
 * Cuentas gratuitas en GitHub, Supabase y Netlify; una llave de la API de Claude.
 
 ## 3. Flujo de `/tracky-setup` (reanudable; estado en `.tracky/setup-state.json`, sin secretos)
+Implementado en `.claude/skills/tracky-setup/SKILL.md`.
+
 | Paso | Quién | Herramienta | Verificación |
 |---|---|---|---|
-| 0. Revisión | Claude | lista de herramientas de conectores, `sw_vers`, `uname -m` | conectores y Mac compatibles |
-| 1. Repo | Claude | GitHub: crear repo desde la plantilla `tracky`, clonar | repo propio clonado |
-| 2. Supabase | Claude | `create_project` (región cercana), `apply_migration` (esquema, RLS, funciones, catálogo), `allowed_emails`, `get_project_url`, `get_publishable_keys` | `get_advisors` sin alertas de seguridad |
-| 3. Etiquetas | Claude + **usuario** | Conversación: "¿De qué temas son tus juntas y notas?"; Claude propone nombre + descripción de cada etiqueta, el usuario ajusta y Claude las inserta en `tags` con `execute_sql` | ≥ 2 etiquetas con descripción |
-| 3b. Netlify | Claude | crear sitio ligado al repo, variables (URL y publishable key; `service_role` como secreta), un despliegue | sitio responde `GET /health` |
-| 4. Llave de Claude | **Usuario** | Claude da el enlace directo a las variables de Netlify | `/health` → `claude: "ok"` |
-| 5. Mac | Claude (bash) | Homebrew/uv, ffmpeg, `tracky-bridge`, modelo de Whisper según chip y RAM, `audiotap`, `launchd` | `curl 127.0.0.1:47831/health` |
-| 6. Permisos | **Usuario** | Aceptar micrófono / grabación de audio en macOS | `check-system-audio` con nivel > 0 |
-| 7. Emparejar | Claude + usuario | abre la PWA, inicia sesión con enlace mágico, empareja el token del puente | PWA muestra "Puente conectado" |
-| 8. Prueba | Claude | grabación simulada → nota → tarea → monedas | todo en verde |
-| 9. Resumen | Claude | escribe `SETUP-RESULT.md` local (sin secretos) | — |
+| 0. Revisión | Claude | conectores disponibles, `uname`, `sw_vers`, RAM; correo, nombre y sitio | Mac compatible |
+| 1. Repo | Claude | `gh repo create --template` o conector de GitHub; clonar | su repo clonado |
+| 2. Supabase | Claude | `create_project`, `apply_migration`, `allowed_emails`, URL y publishable key, advisors | sin alertas de seguridad |
+| 3. Etiquetas | Claude + **persona** | entrevista → 3–12 etiquetas con descripción + "Otros" | lista confirmada |
+| 4. Netlify | Claude | `create-new-project`, `manage-env-vars` (solo valores públicos) | sitio creado, sin desplegar |
+| 5. URL en Supabase Auth | **Persona** (30 s) | enlace directo a *Auth → URL configuration* | "listo" |
+| 6. Llave de Claude | **Persona** (1 min) | enlace directo a las variables de Netlify (secreta, Functions) | la variable existe |
+| 7. Desplegar | Claude | `deploy-site` **una vez**, desde un clon limpio | `/health?check=claude` → `ok` |
+| 8. Primer acceso | **Persona** + Claude | enlace mágico; `execute_sql` inserta perfil y etiquetas | entra a Tracky |
+| 9. Mac | Claude (bash) + **persona** (permisos) | `scripts/setup-mac.sh install` y `pair` | puente responde y emparejado |
+| 10. Prueba | Claude + persona | tarea con confeti, grabación corta, pregunta al asistente | todo en verde; `SETUP-RESULT.md` |
 
 ## 4. Requisitos
 | ID | Requisito |
@@ -46,4 +48,5 @@ escritorio, haciendo ella solo lo que no se puede delegar con seguridad.
 ## 5. Riesgos
 * Los nombres de herramientas de los conectores pueden cambiar → la skill describe **intenciones** y valida al inicio.
 * Plan gratuito de Supabase se pausa tras 7 días sin uso → `/tracky-doctor` lo detecta y lo reanuda.
-* El conector de Netlify podría no permitir marcar variables como secretas → plan B: el usuario pega también la `service_role` en la UI.
+* El conector de Supabase no expone la configuración de Auth ni la `service_role` → paso 5 manual y ADR-0010 (sin service_role).
+* El conector de Netlify no enlaza el repo de GitHub → los despliegues se hacen con el conector desde un clon limpio; enlazarlo en la UI de Netlify es opcional (despliegue automático por push).

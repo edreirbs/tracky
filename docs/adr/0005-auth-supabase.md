@@ -1,11 +1,11 @@
 # 0005. Supabase Auth + RLS + lista de correos
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Decisión
-Inicio de sesión con **enlace mágico por correo** (por defecto) y opcional GitHub. Un *hook* `before_user_created`
-(o un trigger) rechaza correos que no estén en `allowed_emails` (configurada por la skill de setup con el correo del
-dueño). Todas las tablas con RLS `user_id = auth.uid()`. Las funciones de Netlify validan el JWT con la JWKS del
+Inicio de sesión con **enlace mágico por correo**. Un trigger `before insert on auth.users` rechaza correos que no
+estén en `allowed_emails` (la llena la skill de setup con el correo de la persona). La URL del sitio debe estar en
+*Auth → URL configuration* de Supabase (paso manual de 30 s: el conector no lo expone). Todas las tablas con RLS `user_id = auth.uid()`. Las funciones de Netlify validan el JWT con la JWKS del
 proyecto. Sustituye el GitHub OAuth propio (`worker/src/auth.ts`).
 
 ## Consecuencias

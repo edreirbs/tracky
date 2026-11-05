@@ -1,6 +1,6 @@
 # 0006. Una instancia por persona
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Opciones
 1. **Cada persona despliega su propia copia** (repo + Supabase + Netlify + llave). ✅

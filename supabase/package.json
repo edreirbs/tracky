@@ -1,0 +1,16 @@
+{
+  "name": "@tracky/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint test",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
+    "vitest": "^5.1.0",
+    "@types/node": "^26.6.6"
+  }
+}

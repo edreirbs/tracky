@@ -1,6 +1,6 @@
 # 0003. Backend en Netlify Functions
 
-- Estado: Propuesto · Fecha: 2026-11-05
+- Estado: Aceptado · Fecha: 2026-11-05
 
 ## Contexto
 El backend de `meeting-recording` es Hono + TS empaquetado para Netlify Functions, con una función en segundo plano
@@ -12,8 +12,8 @@ para resumir. Supabase ofrece Edge Functions (Deno) como alternativa.
 3. Mixto.
 
 ## Decisión
-Opción 1. Supabase queda como BD y Auth. Las funciones validan el JWT de Supabase y usan `service_role` solo para
-operaciones que RLS no puede expresar (escritura del resumen por la función en segundo plano).
+Opción 1. Supabase queda como BD y Auth. Las funciones validan el JWT de Supabase y consultan **siempre con ese
+JWT** (RLS aplica), incluida la función en segundo plano que guarda el resumen (ADR-0010).
 
 ## Consecuencias
 * (+) Reuso del 80 % del `worker/`; un solo lugar para secretos (Netlify).
