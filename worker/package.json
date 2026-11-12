@@ -12,11 +12,11 @@
     "build:server": "pnpm gen && esbuild src/netlify/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.mjs --log-level=warning --external:@netlify/functions --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.4.0",
+    "@anthropic-ai/sdk": "^1.7.0",
     "@tracky/shared": "workspace:*",
-    "@netlify/blobs": "^11.1.7",
-    "@netlify/functions": "^6.1.0",
-    "hono": "^4.13.16",
+    "@netlify/blobs": "^11.1.9",
+    "@netlify/functions": "^6.1.1",
+    "hono": "^4.13.17",
     "zod": "^4.6.7"
   },
   "devDependencies": {
